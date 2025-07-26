@@ -2,9 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FileText, Briefcase, TrendingUp, Clock, Brain, Bell, Plus, Download, User, LogOut } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { FileText, Briefcase, TrendingUp, Clock, Plus, Download } from "lucide-react";
 import ResumeUpload from "@/components/resume-upload";
 import JobInput from "@/components/job-input";
 import SkillExtraction from "@/components/skill-extraction";
@@ -22,7 +20,6 @@ export default function Dashboard() {
   const [selectedResume, setSelectedResume] = useState<any>(null);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [currentMatch, setCurrentMatch] = useState<any>(null);
-  const { user, logout } = useAuth();
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/stats"],
@@ -41,68 +38,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Brain className="text-primary text-2xl mr-3" />
-                <span className="text-xl font-semibold text-gray-900">ResumeMatch AI</span>
-              </div>
-              <nav className="hidden md:flex ml-10 space-x-8">
-                <a href="#" className="text-primary border-b-2 border-primary px-1 pb-4 text-sm font-medium">
-                  Dashboard
-                </a>
-                <a href="#" className="text-gray-500 hover:text-gray-700 px-1 pb-4 text-sm font-medium">
-                  Job Postings
-                </a>
-                <a href="#" className="text-gray-500 hover:text-gray-700 px-1 pb-4 text-sm font-medium">
-                  Candidates
-                </a>
-                <a href="#" className="text-gray-500 hover:text-gray-700 px-1 pb-4 text-sm font-medium">
-                  Analytics
-                </a>
-              </nav>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                <Bell className="h-5 w-5" />
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">
-                        {user?.firstName?.[0] || user?.email?.[0] || 'U'}
-                      </span>
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">
-                      {user?.firstName && user?.lastName 
-                        ? `${user.firstName} ${user.lastName}`
-                        : user?.email || 'User'
-                      }
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={logout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="space-y-6">
         {/* Page Header */}
         <div className="mb-8">
           <div className="md:flex md:items-center md:justify-between">
@@ -227,6 +163,5 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 }
