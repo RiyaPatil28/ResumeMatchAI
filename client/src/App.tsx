@@ -25,18 +25,9 @@ function Router() {
 
   return (
     <Switch>
-      {user ? (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/dashboard" component={Dashboard} />
-        </>
-      ) : (
-        <>
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
-          <Route path="/" component={Login} />
-        </>
-      )}
+      <Route path="/login" component={user ? Dashboard : Login} />
+      <Route path="/register" component={user ? Dashboard : Register} />
+      <Route path="/" component={user ? Dashboard : Login} />
       <Route component={NotFound} />
     </Switch>
   );

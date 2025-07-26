@@ -79,6 +79,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(data.user);
     setToken(data.token);
     localStorage.setItem('auth_token', data.token);
+    
+    // Force a page reload to ensure proper routing
+    window.location.href = '/';
   };
 
   const register = async (userData: { email: string; password: string; firstName?: string; lastName?: string; company?: string }) => {
@@ -99,6 +102,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(data.user);
     setToken(data.token);
     localStorage.setItem('auth_token', data.token);
+    
+    // Force a page reload to ensure proper routing
+    window.location.href = '/';
   };
 
   const logout = () => {

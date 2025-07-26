@@ -14,24 +14,32 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: React 18 with TypeScript
 - **Styling**: Tailwind CSS with shadcn/ui component library
 - **State Management**: TanStack Query (React Query) for server state
-- **Routing**: Wouter for client-side routing
+- **Authentication**: React Context with JWT token management
+- **Routing**: Wouter for client-side routing with protected routes
 - **File Upload**: Native HTML5 file upload with drag-and-drop support
 - **UI Components**: Comprehensive set of accessible components from Radix UI primitives
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js
 - **Language**: TypeScript with ES modules
+- **Authentication**: JWT-based authentication with bcrypt password hashing
 - **File Processing**: PDF parsing (pdf-parse) and DOCX parsing (mammoth)
 - **NLP Processing**: Custom rule-based skill extraction system
-- **API Design**: RESTful API with JSON responses
+- **API Design**: RESTful API with JSON responses and protected endpoints
 - **Error Handling**: Centralized error handling middleware
 
 ### Database Strategy
-- **Current**: In-memory storage implementation for development
-- **Planned**: PostgreSQL with Drizzle ORM (configured but not yet implemented)
-- **Schema**: Three main entities - resumes, job postings, and matches with foreign key relationships
+- **Current**: PostgreSQL with Drizzle ORM (fully implemented)
+- **Authentication**: User accounts with secure password storage
+- **Schema**: Users, sessions, resumes, job postings, and matches with proper relationships and user isolation
 
 ## Key Components
+
+### Authentication System
+1. **User Registration**: Secure account creation with password hashing
+2. **Login/Logout**: JWT token-based session management
+3. **Protected Routes**: All API endpoints require authentication
+4. **User Isolation**: Each user only sees their own data (resumes, jobs, matches)
 
 ### File Processing Pipeline
 1. **Upload Handler**: Multer middleware for file upload with type validation (PDF, DOCX)
@@ -46,6 +54,8 @@ Preferred communication style: Simple, everyday language.
 - **Output**: Overall score, matched skills, missing skills, strengths, and concerns
 
 ### User Interface Components
+- **Authentication Pages**: Login and registration forms with validation
+- **Interactive Navbar**: User profile dropdown with logout functionality
 - **Dashboard**: Overview with statistics and recent activity
 - **Resume Upload**: Drag-and-drop interface with progress indicators
 - **Skill Extraction Display**: Visual representation of extracted skills by category
@@ -55,10 +65,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Data Flow
 
-1. **Resume Upload**: User uploads PDF/DOCX → File parsing → Text extraction → NLP analysis → Skill categorization → Database storage
-2. **Job Creation**: User inputs job details → Validation → Database storage
-3. **Matching Process**: Resume + Job → Skill comparison → Score calculation → Match record creation
-4. **Status Management**: Users can update candidate status (qualified/under_review/not_qualified)
+1. **User Authentication**: Registration/Login → JWT token generation → Session management → Protected access
+2. **Resume Upload**: User uploads PDF/DOCX → File parsing → Text extraction → NLP analysis → Skill categorization → Database storage (user-specific)
+3. **Job Creation**: User inputs job details → Validation → Database storage (user-specific)
+4. **Matching Process**: Resume + Job → Skill comparison → Score calculation → Match record creation
+5. **Status Management**: Users can update candidate status (qualified/under_review/not_qualified)
 
 ## External Dependencies
 

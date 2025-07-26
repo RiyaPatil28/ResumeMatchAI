@@ -25,7 +25,9 @@ export async function apiRequest(
 
   if (res.status === 401) {
     localStorage.removeItem('auth_token');
-    window.location.href = '/login';
+    if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+      window.location.href = '/login';
+    }
     return res;
   }
 
@@ -50,7 +52,9 @@ export const getQueryFn: <T>(options: {
         return null;
       }
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+        window.location.href = '/login';
+      }
       return null;
     }
 
