@@ -217,7 +217,7 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
-      return populatedMatches;
+      return populatedMatches as (MatchType & { resume: ResumeType; job: JobPostingType })[];
     } catch (error) {
       console.error('Error getting matches:', error);
       return [];

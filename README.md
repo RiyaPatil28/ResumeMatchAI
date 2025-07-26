@@ -37,20 +37,20 @@
 - **Node.js** with Express.js for robust API development
 - **TypeScript** with ES modules for type safety
 - **JWT Authentication** with bcrypt for secure user management
-- **Drizzle ORM** with PostgreSQL for reliable data persistence
+- **Mongoose ODM** with MongoDB Atlas for scalable data persistence
 - **Custom NLP Engine** for skill extraction and text analysis
 
 ### Database & Infrastructure
-- **PostgreSQL** for production-ready data storage
-- **Drizzle ORM** for type-safe database operations
-- **Neon Database** integration for scalable cloud deployment
-- **Session Management** with secure cookie storage
+- **MongoDB Atlas** for cloud-native document storage
+- **Mongoose ODM** for schema-based data modeling
+- **JWT Authentication** for secure session management
+- **User Isolation** ensuring data privacy across accounts
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+ 
-- PostgreSQL database
+- MongoDB Atlas account or local MongoDB instance
 - npm or yarn package manager
 
 ### Installation
@@ -74,10 +74,8 @@
    NODE_ENV=development
    ```
 
-4. **Initialize the database**
-   ```bash
-   npm run db:push
-   ```
+4. **Verify MongoDB connection**
+   Ensure your MongoDB Atlas cluster is accessible and the DATABASE_URL is correct.
 
 5. **Start the development server**
    ```bash
@@ -200,14 +198,12 @@ npm run build
 
 ### Environment Setup
 Ensure production environment variables are configured:
-- `DATABASE_URL`: Production PostgreSQL connection
-- `JWT_SECRET`: Strong secret for token signing
+- `DATABASE_URL`: Production MongoDB Atlas connection string
+- `JWT_SECRET`: Strong secret for token signing  
 - `NODE_ENV=production`
 
-### Database Migration
-```bash
-npm run db:push
-```
+### Database Setup
+Ensure MongoDB Atlas connection is properly configured with the correct DATABASE_URL.
 
 ## 🤝 Contributing
 
@@ -239,6 +235,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support, please open an issue on GitHub or contact the development team.
+
+---
+
+## 📝 Recent Updates (January 26, 2025)
+
+### Latest Improvements
+- ✅ **MongoDB Migration**: Successfully migrated from PostgreSQL/Drizzle to MongoDB Atlas/Mongoose
+- ✅ **Enhanced File Upload**: Fixed PDF upload processing and error handling
+- ✅ **Processing Time Display**: Added dynamic processing time calculation based on actual file analysis
+- ✅ **Frontend-Backend Sync**: Resolved API response structure mismatches
+- ✅ **TypeScript Fixes**: Eliminated all LSP errors for better code reliability
+- ✅ **User Data Isolation**: Each user only sees their own resumes, jobs, and matches
+- ✅ **Candidate Management**: Full pipeline with status tracking and export capabilities
+- ✅ **NLP Enhancement**: Improved skill extraction for modern frontend technologies
 
 ---
 
