@@ -14,13 +14,26 @@ export async function apiRequest(
 ): Promise<Response> {
   const token = localStorage.getItem('auth_token');
   
+  const headers: Record<string, string> = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  
+  let body: any = undefined;
+  
+  if (data) {
+    if (data instanceof FormData) {
+      // Don't set Content-Type for FormData, let browser set it with boundary
+      body = data;
+    } else {
+      headers["Content-Type"] = "application/json";
+      body = JSON.stringify(data);
+    }
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: {
-      ...(data ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: data ? JSON.stringify(data) : undefined,
+    headers,
+    body,
   });
 
   if (res.status === 401) {
