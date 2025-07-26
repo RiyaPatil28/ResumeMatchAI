@@ -2,7 +2,6 @@
 
 > **Advanced AI-powered Resume Management Platform** that leverages Natural Language Processing for intelligent resume parsing, job matching, and career insights.
 
-![ResumeMatch AI Dashboard](https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=ResumeMatch+AI+Dashboard)
 
 ## 🌟 Features
 
