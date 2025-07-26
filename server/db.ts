@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 
-// For MongoDB migration, explicitly use MongoDB URL regardless of PostgreSQL env var
-const DATABASE_URL = 'mongodb://localhost:27017/resumematch_db';
-console.log('Using MongoDB URL:', DATABASE_URL);
+// Use MongoDB Atlas cloud database
+const DATABASE_URL = 'mongodb+srv://riya28:2022PE0226r@cluster0.op9ayen.mongodb.net/resumematch_db?retryWrites=true&w=majority&appName=Cluster0';
+console.log('Connecting to MongoDB Atlas...');
 
 export async function connectToDatabase() {
   try {
