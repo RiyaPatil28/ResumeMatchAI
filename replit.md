@@ -29,9 +29,9 @@ Preferred communication style: Simple, everyday language.
 - **Error Handling**: Centralized error handling middleware
 
 ### Database Strategy
-- **Current**: PostgreSQL with Drizzle ORM (fully implemented)
+- **Current**: MongoDB with Mongoose ODM (fully implemented)
 - **Authentication**: User accounts with secure password storage
-- **Schema**: Users, sessions, resumes, job postings, and matches with proper relationships and user isolation
+- **Schema**: Users, resumes, job postings, and matches with proper relationships and user isolation
 
 ## Key Components
 
@@ -122,3 +122,4 @@ The application is designed as a monorepo with clear separation between client a
 - ✅ **Improved Table Layout**: Enhanced candidate table with horizontal scrolling, better column widths, and proper text truncation
 - ✅ **Fixed Name Extraction**: Enhanced NLP processor to properly extract candidate names from resumes with various formatting styles
 - ✅ **Dynamic Position Filter**: Updated candidate table filter to show all actual job positions instead of hardcoded software development roles
+- ✅ **MongoDB Migration**: Successfully migrated from PostgreSQL/Drizzle to MongoDB/Mongoose with complete schema conversion and API updates

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import { storage } from "./storage.js";
-import { insertUserSchema, insertResumeSchema, insertJobPostingSchema } from "@shared/schema.js";
+import { type InsertUser, type InsertResume, type InsertJobPosting } from "@shared/schema.js";
 import { FileParser } from "./services/file-parser.js";
 import { NLPProcessor } from "./services/nlp-processor.js";
 import { JobMatcher } from "./services/job-matcher.js";
@@ -34,26 +34,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const validatedData = insertUserSchema.parse(req.body);
+      const { email, password, firstName, lastName, company, role } = req.body as InsertUser;
       
       // Check if user already exists
-      const existingUser = await storage.getUserByEmail(validatedData.email);
+      const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: "User already exists with this email" });
       }
       
       // Hash password
-      const hashedPassword = await hashPassword(validatedData.password);
+      const hashedPassword = await hashPassword(password);
       
       // Create user
       const user = await storage.createUser({
-        ...validatedData,
+        email,
+        firstName,
+        lastName,
+        company,
+        role,
         password: hashedPassword,
       });
       
       // Generate token
       const token = generateToken({
-        id: user.id,
+        id: user._id.toString(),
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -63,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         user: {
-          id: user.id,
+          id: user._id.toString(),
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
@@ -100,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate token
       const token = generateToken({
-        id: user.id,
+        id: user._id.toString(),
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -110,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         user: {
-          id: user.id,
+          id: user._id.toString(),
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
@@ -133,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json({
-        id: user.id,
+        id: user._id.toString(),
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -142,356 +146,270 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Get user error:', error);
-      res.status(500).json({ message: "Failed to get user data" });
+      res.status(500).json({ message: "Failed to get user" });
     }
   });
 
-  // Get dashboard stats
-  app.get("/api/stats", authMiddleware, async (req, res) => {
-    try {
-      const stats = await storage.getStats(req.user!.id);
-      res.json(stats);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      res.status(500).json({ message: "Failed to fetch statistics" });
-    }
-  });
-
-  // Upload and analyze resume
+  // Resume routes
   app.post("/api/resumes/upload", authMiddleware, upload.single('resume'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      // Parse the uploaded file
-      const parsedDoc = await FileParser.parseFile(req.file.buffer, req.file.mimetype);
+      // Parse the file
+      const text = await FileParser.parseFile(req.file);
       
-      // Analyze the resume text using NLP
-      const analysis = NLPProcessor.analyzeResume(parsedDoc.text);
+      // Analyze with NLP
+      const analysis = NLPProcessor.analyzeResume(text);
       
       // Create resume record
-      const resumeData = {
+      const resume = await storage.createResume({
         userId: req.user!.id,
         fileName: req.file.originalname,
-        candidateName: analysis.candidateName || "Unknown Candidate",
-        candidateEmail: analysis.candidateEmail || undefined,
-        rawText: parsedDoc.text,
+        candidateName: analysis.candidateName,
+        candidateEmail: analysis.candidateEmail,
+        rawText: text,
         extractedSkills: analysis.skills,
         experience: analysis.experience,
         education: analysis.education,
-      };
-
-      const resume = await storage.createResume(resumeData);
+      });
       
       res.json({
-        success: true,
-        resume,
-        analysis
+        id: resume._id.toString(),
+        fileName: resume.fileName,
+        candidateName: resume.candidateName,
+        candidateEmail: resume.candidateEmail,
+        extractedSkills: resume.extractedSkills,
+        experience: resume.experience,
+        education: resume.education,
+        uploadedAt: resume.uploadedAt
       });
     } catch (error) {
       console.error('Resume upload error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to process resume" 
-      });
+      res.status(500).json({ message: "Failed to upload resume" });
     }
   });
 
-  // Get all resumes
   app.get("/api/resumes", authMiddleware, async (req, res) => {
     try {
-      const resumes = await storage.getAllResumes(req.user!.id);
-      res.json(resumes);
+      const resumes = await storage.getResumes(req.user!.id);
+      res.json(resumes.map(resume => ({
+        id: resume._id.toString(),
+        fileName: resume.fileName,
+        candidateName: resume.candidateName,
+        candidateEmail: resume.candidateEmail,
+        extractedSkills: resume.extractedSkills,
+        experience: resume.experience,
+        education: resume.education,
+        uploadedAt: resume.uploadedAt
+      })));
     } catch (error) {
-      console.error('Error fetching resumes:', error);
-      res.status(500).json({ message: "Failed to fetch resumes" });
+      console.error('Get resumes error:', error);
+      res.status(500).json({ message: "Failed to get resumes" });
     }
   });
 
-  // Get specific resume
-  app.get("/api/resumes/:id", async (req, res) => {
-    try {
-      const resume = await storage.getResume(req.params.id);
-      if (!resume) {
-        return res.status(404).json({ message: "Resume not found" });
-      }
-      res.json(resume);
-    } catch (error) {
-      console.error('Error fetching resume:', error);
-      res.status(500).json({ message: "Failed to fetch resume" });
-    }
-  });
-
-  // Create job posting
+  // Job routes
   app.post("/api/jobs", authMiddleware, async (req, res) => {
     try {
-      const validatedData = insertJobPostingSchema.parse(req.body);
+      const { title, company, description, requirements } = req.body as InsertJobPosting;
       
-      // Extract skills from job description
-      const jobAnalysis = NLPProcessor.analyzeResume(validatedData.description);
-      const requiredSkills = [
-        ...jobAnalysis.skills.technical.map(s => s.skill),
-        ...jobAnalysis.skills.tools.map(s => s.skill)
-      ].slice(0, 10); // Limit to top 10 skills
-
-      const jobData = {
-        ...validatedData,
+      const job = await storage.createJob({
         userId: req.user!.id,
-        requiredSkills
-      };
-
-      const job = await storage.createJobPosting(jobData);
-      res.json(job);
-    } catch (error) {
-      console.error('Job creation error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to create job posting" 
+        title,
+        company,
+        description,
+        requiredSkills: requirements,
       });
+      
+      res.json({
+        id: job._id.toString(),
+        title: job.title,
+        company: job.company,
+        description: job.description,
+        requiredSkills: job.requiredSkills,
+        createdAt: job.createdAt
+      });
+    } catch (error) {
+      console.error('Create job error:', error);
+      res.status(500).json({ message: "Failed to create job" });
     }
   });
 
-  // Get all job postings
   app.get("/api/jobs", authMiddleware, async (req, res) => {
     try {
-      const jobs = await storage.getAllJobPostings(req.user!.id);
-      res.json(jobs);
+      const jobs = await storage.getJobs(req.user!.id);
+      res.json(jobs.map(job => ({
+        id: job._id.toString(),
+        title: job.title,
+        company: job.company,
+        description: job.description,
+        requiredSkills: job.requiredSkills,
+        createdAt: job.createdAt
+      })));
     } catch (error) {
-      console.error('Error fetching jobs:', error);
-      res.status(500).json({ message: "Failed to fetch job postings" });
+      console.error('Get jobs error:', error);
+      res.status(500).json({ message: "Failed to get jobs" });
     }
   });
 
-  // Match resume to job
+  // Match routes
   app.post("/api/matches", authMiddleware, async (req, res) => {
     try {
       const { resumeId, jobId } = req.body;
       
-      if (!resumeId || !jobId) {
-        return res.status(400).json({ message: "Resume ID and Job ID are required" });
-      }
-
       const resume = await storage.getResume(resumeId);
-      const job = await storage.getJobPosting(jobId);
+      const job = await storage.getJob(jobId);
       
       if (!resume || !job) {
         return res.status(404).json({ message: "Resume or job not found" });
       }
-
-      // Perform matching analysis
-      const matchResult = JobMatcher.analyzeMatch(
-        resume.extractedSkills!,
-        job,
-        resume.experience || "",
-        resume.education || ""
-      );
-
+      
+      // Generate match analysis
+      const matchResult = JobMatcher.calculateMatch(resume, job);
+      
       // Create match record
       const match = await storage.createMatch({
         resumeId,
         jobId,
-        ...matchResult
+        overallScore: matchResult.overallScore,
+        technicalScore: matchResult.technicalScore,
+        experienceScore: matchResult.experienceScore,
+        culturalScore: matchResult.culturalScore,
+        matchedSkills: matchResult.matchedSkills,
+        missingSkills: matchResult.missingSkills,
+        strengths: matchResult.strengths,
+        concerns: matchResult.concerns,
+        status: 'under_review'
       });
-
-      res.json(match);
+      
+      res.json({
+        id: match._id.toString(),
+        overallScore: match.overallScore,
+        technicalScore: match.technicalScore,
+        experienceScore: match.experienceScore,
+        culturalScore: match.culturalScore,
+        matchedSkills: match.matchedSkills,
+        missingSkills: match.missingSkills,
+        strengths: match.strengths,
+        concerns: match.concerns,
+        status: match.status,
+        createdAt: match.createdAt
+      });
     } catch (error) {
-      console.error('Matching error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to perform matching" 
-      });
+      console.error('Create match error:', error);
+      res.status(500).json({ message: "Failed to create match" });
     }
   });
 
-  // Get all matches
   app.get("/api/matches", authMiddleware, async (req, res) => {
     try {
-      const matches = await storage.getAllMatches(req.user!.id);
-      
-      // Enrich matches with resume and job data
-      const enrichedMatches = await Promise.all(
-        matches.map(async (match) => {
-          const resume = await storage.getResume(match.resumeId);
-          const job = await storage.getJobPosting(match.jobId);
-          return {
-            ...match,
-            resume,
-            job
-          };
-        })
-      );
-      
-      res.json(enrichedMatches);
+      const matches = await storage.getMatches(req.user!.id);
+      res.json(matches.map(match => ({
+        id: match._id.toString(),
+        overallScore: match.overallScore,
+        technicalScore: match.technicalScore,
+        experienceScore: match.experienceScore,
+        culturalScore: match.culturalScore,
+        matchedSkills: match.matchedSkills,
+        missingSkills: match.missingSkills,
+        strengths: match.strengths,
+        concerns: match.concerns,
+        status: match.status,
+        createdAt: match.createdAt,
+        resume: {
+          id: match.resume._id.toString(),
+          fileName: match.resume.fileName,
+          candidateName: match.resume.candidateName,
+          candidateEmail: match.resume.candidateEmail,
+          extractedSkills: match.resume.extractedSkills
+        },
+        job: {
+          id: match.job._id.toString(),
+          title: match.job.title,
+          company: match.job.company,
+          description: match.job.description,
+          requiredSkills: match.job.requiredSkills
+        }
+      })));
     } catch (error) {
-      console.error('Error fetching matches:', error);
-      res.status(500).json({ message: "Failed to fetch matches" });
+      console.error('Get matches error:', error);
+      res.status(500).json({ message: "Failed to get matches" });
     }
   });
 
-  // Update match status
   app.patch("/api/matches/:id/status", authMiddleware, async (req, res) => {
     try {
+      const { id } = req.params;
       const { status } = req.body;
       
-      if (!['qualified', 'under_review', 'not_qualified'].includes(status)) {
-        return res.status(400).json({ message: "Invalid status" });
-      }
-
-      const match = await storage.updateMatchStatus(req.params.id, status);
-      
+      const match = await storage.updateMatchStatus(id, status);
       if (!match) {
         return res.status(404).json({ message: "Match not found" });
       }
-
-      res.json(match);
+      
+      res.json({
+        id: match._id.toString(),
+        status: match.status
+      });
     } catch (error) {
-      console.error('Error updating match status:', error);
+      console.error('Update match status error:', error);
       res.status(500).json({ message: "Failed to update match status" });
     }
   });
 
-  // Delete match
   app.delete("/api/matches/:id", authMiddleware, async (req, res) => {
     try {
-      const success = await storage.deleteMatch(req.params.id);
-      
-      if (!success) {
-        return res.status(404).json({ message: "Match not found" });
-      }
-
+      const { id } = req.params;
+      await storage.deleteMatch(id);
       res.json({ message: "Match deleted successfully" });
     } catch (error) {
-      console.error('Error deleting match:', error);
+      console.error('Delete match error:', error);
       res.status(500).json({ message: "Failed to delete match" });
     }
   });
 
-  // Send email to candidate
-  app.post("/api/matches/:id/email", authMiddleware, async (req, res) => {
+  app.get("/api/matches/:id/export", authMiddleware, async (req, res) => {
     try {
-      const { action } = req.body;
-      const match = await storage.getMatch(req.params.id);
+      const { id } = req.params;
+      const match = await storage.getMatch(id);
       
       if (!match) {
         return res.status(404).json({ message: "Match not found" });
       }
-
-      const resume = await storage.getResume(match.resumeId);
-      const job = await storage.getJobPosting(match.jobId);
       
-      if (!resume || !job) {
-        return res.status(404).json({ message: "Resume or job not found" });
-      }
-
-      // Simulate email sending (in real app, integrate with email service like SendGrid)
-      const emailContent = {
-        to: resume.candidateEmail || 'candidate@example.com',
-        subject: action === 'qualified' ? 
-          `Congratulations! You've been selected for ${job.title}` :
-          `Update on your application for ${job.title}`,
-        message: action === 'qualified' ?
-          `We're excited to inform you that you've been selected for the ${job.title} position at ${job.company}. We'll be in touch soon with next steps.` :
-          `Thank you for your interest in the ${job.title} position at ${job.company}. While we've decided to move forward with other candidates, we appreciate your time.`
+      // Generate export data
+      const exportData = {
+        candidateName: match.candidateName || 'Unknown Candidate',
+        matchId: match._id.toString(),
+        overallScore: match.overallScore,
+        technicalScore: match.technicalScore,
+        experienceScore: match.experienceScore,
+        culturalScore: match.culturalScore,
+        matchedSkills: match.matchedSkills,
+        missingSkills: match.missingSkills,
+        strengths: match.strengths,
+        concerns: match.concerns,
+        status: match.status,
+        exportedAt: new Date().toISOString()
       };
-
-      console.log('Email would be sent:', emailContent);
       
-      res.json({ 
-        message: "Email sent successfully",
-        emailSent: true,
-        recipient: emailContent.to
-      });
+      res.json(exportData);
     } catch (error) {
-      console.error('Error sending email:', error);
-      res.status(500).json({ message: "Failed to send email" });
+      console.error('Export match error:', error);
+      res.status(500).json({ message: "Failed to export match" });
     }
   });
 
-  // Export candidate report
-  app.get("/api/matches/:id/export", authMiddleware, async (req, res) => {
+  // Stats route
+  app.get("/api/stats", authMiddleware, async (req, res) => {
     try {
-      const match = await storage.getMatch(req.params.id);
-      
-      if (!match) {
-        return res.status(404).json({ message: "Match not found" });
-      }
-
-      const resume = await storage.getResume(match.resumeId);
-      const job = await storage.getJobPosting(match.jobId);
-      
-      if (!resume || !job) {
-        return res.status(404).json({ message: "Resume or job not found" });
-      }
-
-      // Generate report data (in real app, use PDF generation library)
-      const reportData = {
-        candidate: {
-          name: resume.candidateName || 'Unknown Candidate',
-          email: resume.candidateEmail || 'No email',
-          fileName: resume.fileName
-        },
-        job: {
-          title: job.title,
-          company: job.company,
-          description: job.description
-        },
-        match: {
-          overallScore: match.overallScore,
-          technicalScore: match.technicalScore,
-          experienceScore: match.experienceScore,
-          culturalScore: match.culturalScore,
-          matchedSkills: match.matchedSkills,
-          missingSkills: match.missingSkills,
-          strengths: match.strengths,
-          concerns: match.concerns,
-          status: match.status
-        },
-        generatedAt: new Date().toISOString()
-      };
-
-      // Create simple text report (in real app, generate PDF)
-      const report = `
-CANDIDATE ANALYSIS REPORT
-========================
-
-Candidate: ${reportData.candidate.name}
-Email: ${reportData.candidate.email}
-Resume: ${reportData.candidate.fileName}
-
-Position: ${reportData.job.title}
-Company: ${reportData.job.company}
-
-MATCH SCORES
-============
-Overall Score: ${reportData.match.overallScore}%
-Technical Score: ${reportData.match.technicalScore}%
-Experience Score: ${reportData.match.experienceScore}%
-Cultural Score: ${reportData.match.culturalScore}%
-
-MATCHED SKILLS
-==============
-${reportData.match.matchedSkills?.join(', ') || 'None'}
-
-MISSING SKILLS
-==============
-${reportData.match.missingSkills?.join(', ') || 'None'}
-
-STRENGTHS
-=========
-${reportData.match.strengths?.join('\n') || 'None identified'}
-
-AREAS FOR REVIEW
-===============
-${reportData.match.concerns?.join('\n') || 'None identified'}
-
-Status: ${reportData.match.status.toUpperCase()}
-Generated: ${reportData.generatedAt}
-      `;
-
-      res.setHeader('Content-Type', 'text/plain');
-      res.setHeader('Content-Disposition', `attachment; filename="candidate-report-${match.id}.txt"`);
-      res.send(report);
+      const stats = await storage.getStats(req.user!.id);
+      res.json(stats);
     } catch (error) {
-      console.error('Error exporting report:', error);
-      res.status(500).json({ message: "Failed to export report" });
+      console.error('Get stats error:', error);
+      res.status(500).json({ message: "Failed to get stats" });
     }
   });
 

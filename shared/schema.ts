@@ -1,105 +1,176 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, jsonb, integer, timestamp, index } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import mongoose, { Schema, Document } from 'mongoose';
 
-// Session storage table for authentication
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
+// User schema for MongoDB
+export interface IUser extends Document {
+  _id: string;
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  role: string;
+  profileImageUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-// User accounts table
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique().notNull(),
-  password: varchar("password").notNull(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  company: varchar("company"),
-  role: varchar("role").default("recruiter"),
-  profileImageUrl: varchar("profile_image_url"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+const userSchema = new Schema<IUser>({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  firstName: { type: String },
+  lastName: { type: String },
+  company: { type: String },
+  role: { type: String, default: 'recruiter' },
+  profileImageUrl: { type: String },
+}, {
+  timestamps: true
 });
 
-export const resumes = pgTable("resumes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  fileName: text("file_name").notNull(),
-  candidateName: text("candidate_name"),
-  candidateEmail: text("candidate_email"),
-  rawText: text("raw_text").notNull(),
-  extractedSkills: jsonb("extracted_skills").$type<{
+// Resume schema
+export interface IResume extends Document {
+  _id: string;
+  userId: string;
+  fileName: string;
+  candidateName?: string;
+  candidateEmail?: string;
+  rawText: string;
+  extractedSkills: {
     technical: Array<{ skill: string; confidence: number }>;
     soft: Array<{ skill: string; confidence: number }>;
     tools: Array<{ skill: string; confidence: number }>;
-  }>(),
-  experience: text("experience"),
-  education: text("education"),
-  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  };
+  experience?: string;
+  education?: string;
+  uploadedAt: Date;
+}
+
+const resumeSchema = new Schema<IResume>({
+  userId: { type: String, required: true, index: true },
+  fileName: { type: String, required: true },
+  candidateName: { type: String },
+  candidateEmail: { type: String },
+  rawText: { type: String, required: true },
+  extractedSkills: {
+    technical: [{ skill: String, confidence: Number }],
+    soft: [{ skill: String, confidence: Number }],
+    tools: [{ skill: String, confidence: Number }]
+  },
+  experience: { type: String },
+  education: { type: String },
+  uploadedAt: { type: Date, default: Date.now }
 });
 
-export const jobPostings = pgTable("job_postings", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  title: text("title").notNull(),
-  company: text("company").notNull(),
-  description: text("description").notNull(),
-  requiredSkills: jsonb("required_skills").$type<string[]>(),
-  createdAt: timestamp("created_at").defaultNow(),
+// Job Posting schema
+export interface IJobPosting extends Document {
+  _id: string;
+  userId: string;
+  title: string;
+  company: string;
+  description: string;
+  requiredSkills?: string[];
+  createdAt: Date;
+}
+
+const jobPostingSchema = new Schema<IJobPosting>({
+  userId: { type: String, required: true, index: true },
+  title: { type: String, required: true },
+  company: { type: String, required: true },
+  description: { type: String, required: true },
+  requiredSkills: [{ type: String }],
+  createdAt: { type: Date, default: Date.now }
 });
 
-export const matches = pgTable("matches", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  resumeId: varchar("resume_id").references(() => resumes.id).notNull(),
-  jobId: varchar("job_id").references(() => jobPostings.id).notNull(),
-  overallScore: integer("overall_score").notNull(),
-  technicalScore: integer("technical_score").notNull(),
-  experienceScore: integer("experience_score").notNull(),
-  culturalScore: integer("cultural_score").notNull(),
-  matchedSkills: jsonb("matched_skills").$type<string[]>(),
-  missingSkills: jsonb("missing_skills").$type<string[]>(),
-  strengths: jsonb("strengths").$type<string[]>(),
-  concerns: jsonb("concerns").$type<string[]>(),
-  status: text("status").$type<"qualified" | "under_review" | "not_qualified">().default("under_review"),
-  createdAt: timestamp("created_at").defaultNow(),
+// Match schema
+export interface IMatch extends Document {
+  _id: string;
+  resumeId: string;
+  jobId: string;
+  overallScore: number;
+  technicalScore: number;
+  experienceScore: number;
+  culturalScore: number;
+  matchedSkills?: string[];
+  missingSkills?: string[];
+  strengths?: string[];
+  concerns?: string[];
+  status: 'qualified' | 'under_review' | 'not_qualified';
+  createdAt: Date;
+}
+
+const matchSchema = new Schema<IMatch>({
+  resumeId: { type: String, required: true },
+  jobId: { type: String, required: true },
+  overallScore: { type: Number, required: true },
+  technicalScore: { type: Number, required: true },
+  experienceScore: { type: Number, required: true },
+  culturalScore: { type: Number, required: true },
+  matchedSkills: [{ type: String }],
+  missingSkills: [{ type: String }],
+  strengths: [{ type: String }],
+  concerns: [{ type: String }],
+  status: { 
+    type: String, 
+    enum: ['qualified', 'under_review', 'not_qualified'], 
+    default: 'under_review' 
+  },
+  createdAt: { type: Date, default: Date.now }
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+// Create models
+export const User = mongoose.model<IUser>('User', userSchema);
+export const Resume = mongoose.model<IResume>('Resume', resumeSchema);
+export const JobPosting = mongoose.model<IJobPosting>('JobPosting', jobPostingSchema);
+export const Match = mongoose.model<IMatch>('Match', matchSchema);
 
-export const insertResumeSchema = createInsertSchema(resumes).omit({
-  id: true,
-  userId: true,
-  uploadedAt: true,
-});
+// Type exports for compatibility
+export type UserType = IUser;
+export type ResumeType = IResume;
+export type JobPostingType = IJobPosting;
+export type MatchType = IMatch;
 
-export const insertJobPostingSchema = createInsertSchema(jobPostings).omit({
-  id: true,
-  userId: true,
-  createdAt: true,
-  requiredSkills: true,
-});
+export type InsertUser = {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  role?: string;
+  profileImageUrl?: string;
+};
 
-export const insertMatchSchema = createInsertSchema(matches).omit({
-  id: true,
-  createdAt: true,
-});
+export type InsertResume = {
+  userId: string;
+  fileName: string;
+  candidateName?: string;
+  candidateEmail?: string;
+  rawText: string;
+  extractedSkills?: {
+    technical: Array<{ skill: string; confidence: number }>;
+    soft: Array<{ skill: string; confidence: number }>;
+    tools: Array<{ skill: string; confidence: number }>;
+  };
+  experience?: string;
+  education?: string;
+};
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type Resume = typeof resumes.$inferSelect;
-export type InsertResume = z.infer<typeof insertResumeSchema>;
-export type JobPosting = typeof jobPostings.$inferSelect;
-export type InsertJobPosting = z.infer<typeof insertJobPostingSchema>;
-export type Match = typeof matches.$inferSelect;
-export type InsertMatch = z.infer<typeof insertMatchSchema>;
+export type InsertJobPosting = {
+  userId: string;
+  title: string;
+  company: string;
+  description: string;
+  requiredSkills?: string[];
+};
+
+export type InsertMatch = {
+  resumeId: string;
+  jobId: string;
+  overallScore: number;
+  technicalScore: number;
+  experienceScore: number;
+  culturalScore: number;
+  matchedSkills?: string[];
+  missingSkills?: string[];
+  strengths?: string[];
+  concerns?: string[];
+  status?: 'qualified' | 'under_review' | 'not_qualified';
+};

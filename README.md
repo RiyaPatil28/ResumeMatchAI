@@ -69,7 +69,7 @@
 3. **Set up environment variables**
    Create a `.env` file in the root directory:
    ```env
-   DATABASE_URL=postgresql://username:password@localhost:5432/resumematch_db
+   DATABASE_URL=mongodb://localhost:27017/resumematch_db
    JWT_SECRET=your_super_secure_jwt_secret_key_here_make_it_long_and_random
    NODE_ENV=development
    ```

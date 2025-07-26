@@ -1,188 +1,303 @@
-import { type User, type InsertUser, type Resume, type InsertResume, type JobPosting, type InsertJobPosting, type Match, type InsertMatch } from "@shared/schema";
-import { users, resumes, jobPostings, matches } from "@shared/schema";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
-import { randomUUID } from "crypto";
+import {
+  User,
+  Resume,
+  JobPosting,
+  Match,
+  type UserType,
+  type ResumeType,
+  type JobPostingType,
+  type MatchType,
+  type InsertUser,
+  type InsertResume,
+  type InsertJobPosting,
+  type InsertMatch,
+} from "@shared/schema";
+import mongoose from 'mongoose';
 
+// Interface for storage operations
 export interface IStorage {
   // User operations
-  createUser(user: InsertUser): Promise<User>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  getUser(id: string): Promise<User | undefined>;
+  getUser(id: string): Promise<UserType | undefined>;
+  getUserByEmail(email: string): Promise<UserType | undefined>;
+  createUser(user: InsertUser): Promise<UserType>;
   
   // Resume operations
-  createResume(resume: InsertResume): Promise<Resume>;
-  getResume(id: string): Promise<Resume | undefined>;
-  getAllResumes(userId?: string): Promise<Resume[]>;
+  createResume(resume: InsertResume): Promise<ResumeType>;
+  getResumes(userId: string): Promise<ResumeType[]>;
+  getResume(id: string): Promise<ResumeType | undefined>;
+  deleteResume(id: string): Promise<void>;
   
-  // Job posting operations
-  createJobPosting(job: InsertJobPosting): Promise<JobPosting>;
-  getJobPosting(id: string): Promise<JobPosting | undefined>;
-  getAllJobPostings(userId?: string): Promise<JobPosting[]>;
+  // Job operations
+  createJob(job: InsertJobPosting): Promise<JobPostingType>;
+  getJobs(userId: string): Promise<JobPostingType[]>;
+  getJob(id: string): Promise<JobPostingType | undefined>;
+  updateJob(id: string, updates: Partial<InsertJobPosting>): Promise<JobPostingType | undefined>;
+  deleteJob(id: string): Promise<void>;
   
   // Match operations
-  createMatch(match: InsertMatch): Promise<Match>;
-  getMatch(id: string): Promise<Match | undefined>;
-  getMatchesByResumeId(resumeId: string): Promise<Match[]>;
-  getMatchesByJobId(jobId: string): Promise<Match[]>;
-  getAllMatches(userId?: string): Promise<Match[]>;
-  updateMatchStatus(id: string, status: "qualified" | "under_review" | "not_qualified"): Promise<Match | undefined>;
-  deleteMatch(id: string): Promise<boolean>;
+  createMatch(match: InsertMatch): Promise<MatchType>;
+  getMatches(userId: string): Promise<Array<MatchType & { resume: ResumeType; job: JobPostingType }>>;
+  getMatch(id: string): Promise<MatchType | undefined>;
+  updateMatchStatus(id: string, status: 'qualified' | 'under_review' | 'not_qualified'): Promise<MatchType | undefined>;
+  deleteMatch(id: string): Promise<void>;
   
-  // Analytics
-  getStats(userId?: string): Promise<{
+  // Stats operations
+  getStats(userId: string): Promise<{
     totalResumes: number;
     activeJobs: number;
     avgMatchScore: number;
-    processingTime: string;
+    totalMatches: number;
   }>;
 }
 
 export class DatabaseStorage implements IStorage {
   // User operations
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
-    return user;
+  async getUser(id: string): Promise<UserType | undefined> {
+    try {
+      const user = await User.findById(id);
+      return user || undefined;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      return undefined;
+    }
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
+  async getUserByEmail(email: string): Promise<UserType | undefined> {
+    try {
+      const user = await User.findOne({ email });
+      return user || undefined;
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return undefined;
+    }
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+  async createUser(userData: InsertUser): Promise<UserType> {
+    try {
+      const user = new User(userData);
+      return await user.save();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
   }
 
   // Resume operations
-  async createResume(insertResume: InsertResume & { userId: string }): Promise<Resume> {
-    const [resume] = await db
-      .insert(resumes)
-      .values(insertResume)
-      .returning();
-    return resume;
-  }
-
-  async getResume(id: string): Promise<Resume | undefined> {
-    const [resume] = await db.select().from(resumes).where(eq(resumes.id, id));
-    return resume || undefined;
-  }
-
-  async getAllResumes(userId?: string): Promise<Resume[]> {
-    if (userId) {
-      return await db.select().from(resumes).where(eq(resumes.userId, userId));
+  async createResume(resumeData: InsertResume): Promise<ResumeType> {
+    try {
+      const resume = new Resume(resumeData);
+      return await resume.save();
+    } catch (error) {
+      console.error('Error creating resume:', error);
+      throw error;
     }
-    return await db.select().from(resumes);
   }
 
-  // Job posting operations
-  async createJobPosting(insertJob: InsertJobPosting & { userId: string }): Promise<JobPosting> {
-    const [job] = await db
-      .insert(jobPostings)
-      .values(insertJob)
-      .returning();
-    return job;
-  }
-
-  async getJobPosting(id: string): Promise<JobPosting | undefined> {
-    const [job] = await db.select().from(jobPostings).where(eq(jobPostings.id, id));
-    return job || undefined;
-  }
-
-  async getAllJobPostings(userId?: string): Promise<JobPosting[]> {
-    if (userId) {
-      return await db.select().from(jobPostings).where(eq(jobPostings.userId, userId));
+  async getResumes(userId: string): Promise<ResumeType[]> {
+    try {
+      return await Resume.find({ userId }).sort({ uploadedAt: -1 });
+    } catch (error) {
+      console.error('Error getting resumes:', error);
+      return [];
     }
-    return await db.select().from(jobPostings);
+  }
+
+  async getResume(id: string): Promise<ResumeType | undefined> {
+    try {
+      const resume = await Resume.findById(id);
+      return resume || undefined;
+    } catch (error) {
+      console.error('Error getting resume:', error);
+      return undefined;
+    }
+  }
+
+  async deleteResume(id: string): Promise<void> {
+    try {
+      await Resume.findByIdAndDelete(id);
+      // Also delete associated matches
+      await Match.deleteMany({ resumeId: id });
+    } catch (error) {
+      console.error('Error deleting resume:', error);
+      throw error;
+    }
+  }
+
+  // Job operations
+  async createJob(jobData: InsertJobPosting): Promise<JobPostingType> {
+    try {
+      const job = new JobPosting(jobData);
+      return await job.save();
+    } catch (error) {
+      console.error('Error creating job:', error);
+      throw error;
+    }
+  }
+
+  async getJobs(userId: string): Promise<JobPostingType[]> {
+    try {
+      return await JobPosting.find({ userId }).sort({ createdAt: -1 });
+    } catch (error) {
+      console.error('Error getting jobs:', error);
+      return [];
+    }
+  }
+
+  async getJob(id: string): Promise<JobPostingType | undefined> {
+    try {
+      const job = await JobPosting.findById(id);
+      return job || undefined;
+    } catch (error) {
+      console.error('Error getting job:', error);
+      return undefined;
+    }
+  }
+
+  async updateJob(id: string, updates: Partial<InsertJobPosting>): Promise<JobPostingType | undefined> {
+    try {
+      const job = await JobPosting.findByIdAndUpdate(id, updates, { new: true });
+      return job || undefined;
+    } catch (error) {
+      console.error('Error updating job:', error);
+      return undefined;
+    }
+  }
+
+  async deleteJob(id: string): Promise<void> {
+    try {
+      await JobPosting.findByIdAndDelete(id);
+      // Also delete associated matches
+      await Match.deleteMany({ jobId: id });
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      throw error;
+    }
   }
 
   // Match operations
-  async createMatch(insertMatch: InsertMatch): Promise<Match> {
-    const [match] = await db
-      .insert(matches)
-      .values(insertMatch)
-      .returning();
-    return match;
-  }
-
-  async getMatch(id: string): Promise<Match | undefined> {
-    const [match] = await db.select().from(matches).where(eq(matches.id, id));
-    return match || undefined;
-  }
-
-  async getMatchesByResumeId(resumeId: string): Promise<Match[]> {
-    return await db.select().from(matches).where(eq(matches.resumeId, resumeId));
-  }
-
-  async getMatchesByJobId(jobId: string): Promise<Match[]> {
-    return await db.select().from(matches).where(eq(matches.jobId, jobId));
-  }
-
-  async getAllMatches(userId?: string): Promise<Match[]> {
-    if (userId) {
-      // Get matches for jobs created by this user
-      const userMatches = await db
-        .select({
-          id: matches.id,
-          resumeId: matches.resumeId,
-          jobId: matches.jobId,
-          overallScore: matches.overallScore,
-          technicalScore: matches.technicalScore,
-          experienceScore: matches.experienceScore,
-          culturalScore: matches.culturalScore,
-          matchedSkills: matches.matchedSkills,
-          missingSkills: matches.missingSkills,
-          strengths: matches.strengths,
-          concerns: matches.concerns,
-          status: matches.status,
-          createdAt: matches.createdAt,
-        })
-        .from(matches)
-        .innerJoin(jobPostings, eq(matches.jobId, jobPostings.id))
-        .where(eq(jobPostings.userId, userId));
-      return userMatches;
+  async createMatch(matchData: InsertMatch): Promise<MatchType> {
+    try {
+      const match = new Match(matchData);
+      return await match.save();
+    } catch (error) {
+      console.error('Error creating match:', error);
+      throw error;
     }
-    return await db.select().from(matches);
   }
 
-  async updateMatchStatus(id: string, status: "qualified" | "under_review" | "not_qualified"): Promise<Match | undefined> {
-    const [match] = await db
-      .update(matches)
-      .set({ status })
-      .where(eq(matches.id, id))
-      .returning();
-    return match || undefined;
+  async getMatches(userId: string): Promise<Array<MatchType & { resume: ResumeType; job: JobPostingType }>> {
+    try {
+      // First get all resumes and jobs for this user
+      const userResumes = await Resume.find({ userId });
+      const userJobs = await JobPosting.find({ userId });
+      
+      const resumeIds = userResumes.map(r => r._id.toString());
+      const jobIds = userJobs.map(j => j._id.toString());
+      
+      // Get matches for user's resumes and jobs
+      const matches = await Match.find({
+        $or: [
+          { resumeId: { $in: resumeIds } },
+          { jobId: { $in: jobIds } }
+        ]
+      }).sort({ createdAt: -1 });
+
+      // Populate with resume and job data
+      const populatedMatches = [];
+      for (const match of matches) {
+        const resume = userResumes.find(r => r._id.toString() === match.resumeId);
+        const job = userJobs.find(j => j._id.toString() === match.jobId);
+        
+        if (resume && job) {
+          populatedMatches.push({
+            ...match.toObject(),
+            resume,
+            job
+          });
+        }
+      }
+      
+      return populatedMatches;
+    } catch (error) {
+      console.error('Error getting matches:', error);
+      return [];
+    }
   }
 
-  async deleteMatch(id: string): Promise<boolean> {
-    const result = await db.delete(matches).where(eq(matches.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
+  async getMatch(id: string): Promise<MatchType | undefined> {
+    try {
+      const match = await Match.findById(id);
+      return match || undefined;
+    } catch (error) {
+      console.error('Error getting match:', error);
+      return undefined;
+    }
   }
 
-  async getStats(userId?: string): Promise<{
+  async updateMatchStatus(id: string, status: 'qualified' | 'under_review' | 'not_qualified'): Promise<MatchType | undefined> {
+    try {
+      const match = await Match.findByIdAndUpdate(id, { status }, { new: true });
+      return match || undefined;
+    } catch (error) {
+      console.error('Error updating match status:', error);
+      return undefined;
+    }
+  }
+
+  async deleteMatch(id: string): Promise<void> {
+    try {
+      await Match.findByIdAndDelete(id);
+    } catch (error) {
+      console.error('Error deleting match:', error);
+      throw error;
+    }
+  }
+
+  // Stats operations
+  async getStats(userId: string): Promise<{
     totalResumes: number;
     activeJobs: number;
     avgMatchScore: number;
-    processingTime: string;
+    totalMatches: number;
   }> {
-    const allResumes = await this.getAllResumes(userId);
-    const allJobs = await this.getAllJobPostings(userId);
-    const allMatches = await this.getAllMatches(userId);
-    
-    const avgScore = allMatches.length > 0 
-      ? Math.round(allMatches.reduce((sum, match) => sum + match.overallScore, 0) / allMatches.length)
-      : 0;
+    try {
+      const [totalResumes, activeJobs, userResumes, userJobs] = await Promise.all([
+        Resume.countDocuments({ userId }),
+        JobPosting.countDocuments({ userId }),
+        Resume.find({ userId }),
+        JobPosting.find({ userId })
+      ]);
 
-    return {
-      totalResumes: allResumes.length,
-      activeJobs: allJobs.length,
-      avgMatchScore: avgScore,
-      processingTime: "2.3s"
-    };
+      const resumeIds = userResumes.map(r => r._id.toString());
+      const jobIds = userJobs.map(j => j._id.toString());
+      
+      const matches = await Match.find({
+        $or: [
+          { resumeId: { $in: resumeIds } },
+          { jobId: { $in: jobIds } }
+        ]
+      });
+
+      const totalMatches = matches.length;
+      const avgMatchScore = totalMatches > 0 
+        ? Math.round(matches.reduce((sum, match) => sum + match.overallScore, 0) / totalMatches)
+        : 0;
+
+      return {
+        totalResumes,
+        activeJobs,
+        avgMatchScore,
+        totalMatches
+      };
+    } catch (error) {
+      console.error('Error getting stats:', error);
+      return {
+        totalResumes: 0,
+        activeJobs: 0,
+        avgMatchScore: 0,
+        totalMatches: 0
+      };
+    }
   }
 }
 
