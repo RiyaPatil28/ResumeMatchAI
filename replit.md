@@ -119,3 +119,4 @@ The application is designed as a monorepo with clear separation between client a
 - ✅ **Removed Email Feature**: Removed Send Email option from candidate actions per user request
 - ✅ **Enhanced Export**: Improved Export Report functionality with proper filename generation and error handling
 - ✅ **Simplified Actions**: Removed Send Email and Export Report buttons from match results page to streamline interface
+- ✅ **Improved Table Layout**: Enhanced candidate table with horizontal scrolling, better column widths, and proper text truncation

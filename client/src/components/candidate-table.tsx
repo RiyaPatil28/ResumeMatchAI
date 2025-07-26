@@ -211,23 +211,23 @@ export default function CandidateTable() {
         </div>
         
         {/* Candidates Table */}
-        <div className="overflow-hidden">
+        <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
                   Candidate
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">
                   Position
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
                   Match Score
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
                   Actions
                 </th>
               </tr>
@@ -235,26 +235,26 @@ export default function CandidateTable() {
             <tbody className="bg-white divide-y divide-gray-200">
               {matches.map((match) => (
                 <tr key={match.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${getAvatarColor(match.resume.candidateName || 'Unknown Candidate')}`}>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="flex items-center min-w-0">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0 ${getAvatarColor(match.resume.candidateName || 'Unknown Candidate')}`}>
                         {getInitials(match.resume.candidateName || 'Unknown Candidate')}
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
+                      <div className="ml-4 min-w-0 flex-1">
+                        <div className="text-sm font-medium text-gray-900 truncate">
                           {match.resume.candidateName || 'Unknown Candidate'}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 truncate">
                           {match.resume.candidateEmail || 'hello@reallygreatsite.com'}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{match.job.title}</div>
-                    <div className="text-sm text-gray-500">{match.job.company}</div>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 truncate">{match.job.title}</div>
+                    <div className="text-sm text-gray-500 truncate">{match.job.company}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="w-16 mr-2">
                         <Progress value={match.overallScore} className="h-2" />
@@ -264,12 +264,12 @@ export default function CandidateTable() {
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <Badge className={getStatusColor(match.status)}>
                       {match.status.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
