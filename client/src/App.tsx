@@ -49,6 +49,7 @@ function Router() {
         </div>
       }>
         <Switch>
+          <Route path="/dashboard" component={Dashboard} />
           <Route path="/jobs" component={JobPostings} />
           <Route path="/candidates" component={Candidates} />
           <Route path="/analytics" component={Analytics} />

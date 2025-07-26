@@ -56,7 +56,7 @@ export default function Navbar() {
   ];
 
   const isActiveTab = (path: string) => {
-    if (path === "/" && location === "/") return true;
+    if (path === "/" && (location === "/" || location === "/dashboard")) return true;
     if (path !== "/" && location.startsWith(path)) return true;
     return false;
   };
