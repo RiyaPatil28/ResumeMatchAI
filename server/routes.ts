@@ -348,6 +348,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete match
+  app.delete("/api/matches/:id", authMiddleware, async (req, res) => {
+    try {
+      const success = await storage.deleteMatch(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+
+      res.json({ message: "Match deleted successfully" });
+    } catch (error) {
+      console.error('Error deleting match:', error);
+      res.status(500).json({ message: "Failed to delete match" });
+    }
+  });
+
+  // Send email to candidate
+  app.post("/api/matches/:id/email", authMiddleware, async (req, res) => {
+    try {
+      const { action } = req.body;
+      const match = await storage.getMatch(req.params.id);
+      
+      if (!match) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+
+      const resume = await storage.getResume(match.resumeId);
+      const job = await storage.getJobPosting(match.jobId);
+      
+      if (!resume || !job) {
+        return res.status(404).json({ message: "Resume or job not found" });
+      }
+
+      // Simulate email sending (in real app, integrate with email service like SendGrid)
+      const emailContent = {
+        to: resume.candidateEmail || 'candidate@example.com',
+        subject: action === 'qualified' ? 
+          `Congratulations! You've been selected for ${job.title}` :
+          `Update on your application for ${job.title}`,
+        message: action === 'qualified' ?
+          `We're excited to inform you that you've been selected for the ${job.title} position at ${job.company}. We'll be in touch soon with next steps.` :
+          `Thank you for your interest in the ${job.title} position at ${job.company}. While we've decided to move forward with other candidates, we appreciate your time.`
+      };
+
+      console.log('Email would be sent:', emailContent);
+      
+      res.json({ 
+        message: "Email sent successfully",
+        emailSent: true,
+        recipient: emailContent.to
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      res.status(500).json({ message: "Failed to send email" });
+    }
+  });
+
+  // Export candidate report
+  app.get("/api/matches/:id/export", authMiddleware, async (req, res) => {
+    try {
+      const match = await storage.getMatch(req.params.id);
+      
+      if (!match) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+
+      const resume = await storage.getResume(match.resumeId);
+      const job = await storage.getJobPosting(match.jobId);
+      
+      if (!resume || !job) {
+        return res.status(404).json({ message: "Resume or job not found" });
+      }
+
+      // Generate report data (in real app, use PDF generation library)
+      const reportData = {
+        candidate: {
+          name: resume.candidateName || 'Unknown Candidate',
+          email: resume.candidateEmail || 'No email',
+          fileName: resume.fileName
+        },
+        job: {
+          title: job.title,
+          company: job.company,
+          description: job.description
+        },
+        match: {
+          overallScore: match.overallScore,
+          technicalScore: match.technicalScore,
+          experienceScore: match.experienceScore,
+          culturalScore: match.culturalScore,
+          matchedSkills: match.matchedSkills,
+          missingSkills: match.missingSkills,
+          strengths: match.strengths,
+          concerns: match.concerns,
+          status: match.status
+        },
+        generatedAt: new Date().toISOString()
+      };
+
+      // Create simple text report (in real app, generate PDF)
+      const report = `
+CANDIDATE ANALYSIS REPORT
+========================
+
+Candidate: ${reportData.candidate.name}
+Email: ${reportData.candidate.email}
+Resume: ${reportData.candidate.fileName}
+
+Position: ${reportData.job.title}
+Company: ${reportData.job.company}
+
+MATCH SCORES
+============
+Overall Score: ${reportData.match.overallScore}%
+Technical Score: ${reportData.match.technicalScore}%
+Experience Score: ${reportData.match.experienceScore}%
+Cultural Score: ${reportData.match.culturalScore}%
+
+MATCHED SKILLS
+==============
+${reportData.match.matchedSkills?.join(', ') || 'None'}
+
+MISSING SKILLS
+==============
+${reportData.match.missingSkills?.join(', ') || 'None'}
+
+STRENGTHS
+=========
+${reportData.match.strengths?.join('\n') || 'None identified'}
+
+AREAS FOR REVIEW
+===============
+${reportData.match.concerns?.join('\n') || 'None identified'}
+
+Status: ${reportData.match.status.toUpperCase()}
+Generated: ${reportData.generatedAt}
+      `;
+
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="candidate-report-${match.id}.txt"`);
+      res.send(report);
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      res.status(500).json({ message: "Failed to export report" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

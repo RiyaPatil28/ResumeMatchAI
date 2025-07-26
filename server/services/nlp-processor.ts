@@ -14,14 +14,44 @@ export interface ResumeAnalysis {
 
 export class NLPProcessor {
   private static technicalSkills = [
-    'React', 'Vue', 'Angular', 'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'PHP',
-    'Ruby', 'Go', 'Rust', 'Swift', 'Kotlin', 'HTML', 'CSS', 'SCSS', 'SASS', 'Bootstrap',
-    'Tailwind', 'Node.js', 'Express', 'Django', 'Flask', 'Spring', 'ASP.NET', 'Laravel',
-    'MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'GraphQL', 'REST', 'API', 'AWS', 'Azure',
-    'GCP', 'Docker', 'Kubernetes', 'Jenkins', 'CI/CD', 'Git', 'GitHub', 'GitLab', 'Jira',
-    'Redux', 'MobX', 'Vuex', 'NextJS', 'NuxtJS', 'Webpack', 'Vite', 'Rollup', 'Jest',
-    'Cypress', 'Selenium', 'Testing', 'TDD', 'BDD', 'Microservices', 'Machine Learning',
-    'AI', 'Data Science', 'Blockchain', 'DevOps', 'Linux', 'Windows', 'macOS'
+    // Core Frontend Languages
+    'JavaScript', 'TypeScript', 'ES6', 'ES2020', 'ES2021', 'ECMAScript',
+    
+    // Markup & Styling
+    'HTML', 'HTML5', 'CSS', 'CSS3', 'SCSS', 'SASS', 'Less', 'PostCSS',
+    
+    // Frontend Frameworks
+    'React', 'React.js', 'Vue', 'Vue.js', 'Angular', 'AngularJS', 'Svelte', 'SvelteKit',
+    'Ember', 'Next.js', 'Nuxt.js', 'Gatsby', 'Remix',
+    
+    // State Management
+    'Redux', 'Redux Toolkit', 'MobX', 'Zustand', 'Recoil', 'Context API', 'Vuex', 'Pinia', 'NgRx',
+    
+    // CSS Frameworks
+    'Bootstrap', 'Tailwind CSS', 'Material-UI', 'MUI', 'Chakra UI', 'Ant Design', 'Bulma',
+    'Styled Components', 'Emotion', 'CSS Modules',
+    
+    // Build Tools
+    'Webpack', 'Vite', 'Parcel', 'Rollup', 'esbuild', 'Babel', 'ESLint', 'Prettier',
+    
+    // Testing
+    'Jest', 'Vitest', 'Cypress', 'Playwright', 'Testing Library', 'React Testing Library',
+    'Storybook', 'Enzyme',
+    
+    // Mobile
+    'React Native', 'Flutter', 'Ionic', 'Expo',
+    
+    // Performance
+    'Web Vitals', 'Lighthouse', 'PWA', 'Service Workers', 'WebAssembly',
+    
+    // APIs
+    'REST', 'GraphQL', 'Apollo', 'React Query', 'SWR', 'Axios', 'Fetch',
+    
+    // Backend (for fullstack)
+    'Node.js', 'Express', 'NestJS', 'MongoDB', 'PostgreSQL', 'Redis',
+    
+    // Tools
+    'Git', 'GitHub', 'npm', 'yarn', 'pnpm', 'Figma', 'Adobe XD'
   ];
 
   private static softSkills = [

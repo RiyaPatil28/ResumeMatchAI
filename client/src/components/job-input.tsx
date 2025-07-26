@@ -19,7 +19,7 @@ export default function JobInput({ onJobCreated, selectedResume, onMatchCreated 
   const [formData, setFormData] = useState({
     title: "Senior Frontend Developer",
     company: "Tech Corp Inc.",
-    description: "We are looking for a Senior Frontend Developer with 5+ years of experience in React, TypeScript, and modern web development. The ideal candidate should have strong skills in JavaScript, CSS, HTML, and experience with state management libraries like Redux. Knowledge of testing frameworks, CI/CD, and agile methodologies is preferred."
+    description: ""
   });
 
   const { toast } = useToast();
@@ -140,7 +140,7 @@ export default function JobInput({ onJobCreated, selectedResume, onMatchCreated 
             <Textarea
               id="description"
               rows={6}
-              placeholder="Paste the full job description here..."
+              placeholder="Describe the role requirements, required skills, experience level, and specific technologies needed for this frontend developer position..."
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
             />

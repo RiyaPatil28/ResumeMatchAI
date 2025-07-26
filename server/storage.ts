@@ -27,6 +27,7 @@ export interface IStorage {
   getMatchesByJobId(jobId: string): Promise<Match[]>;
   getAllMatches(userId?: string): Promise<Match[]>;
   updateMatchStatus(id: string, status: "qualified" | "under_review" | "not_qualified"): Promise<Match | undefined>;
+  deleteMatch(id: string): Promise<boolean>;
   
   // Analytics
   getStats(userId?: string): Promise<{
@@ -155,6 +156,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(matches.id, id))
       .returning();
     return match || undefined;
+  }
+
+  async deleteMatch(id: string): Promise<boolean> {
+    const result = await db.delete(matches).where(eq(matches.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 
   async getStats(userId?: string): Promise<{

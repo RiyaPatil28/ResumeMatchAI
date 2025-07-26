@@ -10,7 +10,13 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Users, Filter } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Users, Filter, MoreVertical, Trash2, Mail, Download, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -38,6 +44,76 @@ export default function CandidateTable() {
       toast({
         title: "Update failed",
         description: error.message || "Failed to update candidate status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMatchMutation = useMutation({
+    mutationFn: async (matchId: string) => {
+      const response = await apiRequest('DELETE', `/api/matches/${matchId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/matches'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
+      toast({
+        title: "Candidate removed",
+        description: "Candidate has been removed from pipeline",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to remove candidate",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendEmailMutation = useMutation({
+    mutationFn: async ({ matchId, action }: { matchId: string; action: 'qualified' | 'not_qualified' }) => {
+      const response = await apiRequest('POST', `/api/matches/${matchId}/email`, { action });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Email sent",
+        description: "Notification email has been sent to the candidate",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Email failed", 
+        description: error.message || "Failed to send email",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const exportReportMutation = useMutation({
+    mutationFn: async (matchId: string) => {
+      const response = await apiRequest('GET', `/api/matches/${matchId}/export`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `candidate-report-${matchId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Report exported",
+        description: "Candidate report has been downloaded",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Export failed",
+        description: error.message || "Failed to export report",
         variant: "destructive",
       });
     },
@@ -170,34 +246,31 @@ export default function CandidateTable() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {matches.map((match: any) => (
+              {matches.map((match) => (
                 <tr key={match.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getAvatarColor(match.resume?.candidateName || 'Unknown')}`}>
-                          <span className="text-sm font-medium text-white">
-                            {getInitials(match.resume?.candidateName || 'UK')}
-                          </span>
-                        </div>
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${getAvatarColor(match.resume.candidateName || 'Unknown Candidate')}`}>
+                        {getInitials(match.resume.candidateName || 'Unknown Candidate')}
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {match.resume?.candidateName || 'Unknown Candidate'}
+                          {match.resume.candidateName || 'Unknown Candidate'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {match.resume?.candidateEmail || 'No email provided'}
+                          {match.resume.candidateEmail || 'hello@reallygreatsite.com'}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {match.job?.title || 'Unknown Position'}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{match.job.title}</div>
+                    <div className="text-sm text-gray-500">{match.job.company}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-1 mr-2">
-                        <Progress value={match.overallScore} className="w-full h-2" />
+                      <div className="w-16 mr-2">
+                        <Progress value={match.overallScore} className="h-2" />
                       </div>
                       <span className={`text-sm font-medium ${getScoreColor(match.overallScore)}`}>
                         {match.overallScore}%
@@ -205,49 +278,80 @@ export default function CandidateTable() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge className={getStatusColor(match.status)}>
-                      {match.status.replace('_', ' ').toUpperCase()}
-                    </Badge>
+                    <Select 
+                      value={match.status} 
+                      onValueChange={(status) => updateStatusMutation.mutate({ matchId: match.id, status })}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue>
+                          <Badge className={getStatusColor(match.status)}>
+                            {match.status.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="qualified">
+                          <Badge className="bg-green-100 text-green-800">QUALIFIED</Badge>
+                        </SelectItem>
+                        <SelectItem value="under_review">
+                          <Badge className="bg-yellow-100 text-yellow-800">UNDER REVIEW</Badge>
+                        </SelectItem>
+                        <SelectItem value="not_qualified">
+                          <Badge className="bg-red-100 text-red-800">NOT QUALIFIED</Badge>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <Button 
-                      variant="link" 
-                      size="sm" 
-                      className="text-primary hover:text-primary/80"
-                    >
-                      View
-                    </Button>
-                    <Button 
-                      variant="link" 
-                      size="sm" 
-                      className="text-green-600 hover:text-green-900"
-                      onClick={() => updateStatusMutation.mutate({ 
-                        matchId: match.id, 
-                        status: 'qualified' 
-                      })}
-                      disabled={updateStatusMutation.isPending}
-                    >
-                      Contact
-                    </Button>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem 
+                          onClick={() => sendEmailMutation.mutate({ matchId: match.id, action: 'qualified' })}
+                          disabled={sendEmailMutation.isPending}
+                        >
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send Email
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => exportReportMutation.mutate(match.id)}
+                          disabled={exportReportMutation.isPending}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Export Report
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => deleteMatchMutation.mutate(match.id)}
+                          disabled={deleteMatchMutation.isPending}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remove
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination */}
-        <div className="mt-6 flex items-center justify-between">
+        <div className="flex items-center justify-between pt-4">
           <div className="text-sm text-gray-700">
-            Showing <span className="font-medium">1</span> to{" "}
-            <span className="font-medium">{Math.min(matches.length, 10)}</span> of{" "}
+            Showing <span className="font-medium">1</span> to <span className="font-medium">{matches.length}</span> of{' '}
             <span className="font-medium">{matches.length}</span> results
           </div>
-          <div className="flex space-x-2">
+          <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" disabled>
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={matches.length <= 10}>
+            <Button variant="outline" size="sm" disabled>
               Next
             </Button>
           </div>

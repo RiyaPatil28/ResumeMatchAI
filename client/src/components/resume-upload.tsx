@@ -128,7 +128,15 @@ export default function ResumeUpload({ onResumeUploaded }: ResumeUploadProps) {
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
-            onClick={() => document.getElementById('file-upload')?.click()}
+            onClick={(e) => {
+              // Prevent event bubbling to avoid double triggering
+              e.preventDefault();
+              const input = document.getElementById('file-upload') as HTMLInputElement;
+              if (input) {
+                input.value = ''; // Reset input to allow same file selection
+                input.click();
+              }
+            }}
           >
             <div className="space-y-1 text-center">
               <CloudUpload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
