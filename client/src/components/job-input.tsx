@@ -17,8 +17,8 @@ interface JobInputProps {
 
 export default function JobInput({ onJobCreated, selectedResume, onMatchCreated }: JobInputProps) {
   const [formData, setFormData] = useState({
-    title: "Senior Frontend Developer",
-    company: "Tech Corp Inc.",
+    title: "",
+    company: "",
     description: ""
   });
 
