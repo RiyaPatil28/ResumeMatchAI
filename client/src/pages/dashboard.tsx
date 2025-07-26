@@ -50,16 +50,6 @@ export default function Dashboard() {
                 Upload resumes and match them with job descriptions using AI-powered analysis
               </p>
             </div>
-            <div className="mt-4 flex md:mt-0 md:ml-4">
-              <Button variant="outline" className="mr-3">
-                <Download className="mr-2 h-4 w-4" />
-                Export Results
-              </Button>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Job Posting
-              </Button>
-            </div>
           </div>
 
           {/* Quick Stats */}
