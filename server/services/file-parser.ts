@@ -7,7 +7,37 @@ export interface ParsedDocument {
 }
 
 export class FileParser {
-  static async parseFile(buffer: Buffer, mimetype: string): Promise<ParsedDocument> {
+  static async parseFile(file: Express.Multer.File): Promise<string> {
+    try {
+      const fileType = file.mimetype;
+      const fileName = file.originalname;
+      
+      console.log('Processing file:', { fileName, fileType, size: file.size });
+      
+      if (!fileType) {
+        throw new Error(`Unsupported file type: ${fileType} for file: ${fileName}`);
+      }
+
+      let result: ParsedDocument;
+      
+      if (fileType === 'application/pdf') {
+        result = await this.parsePDF(file.buffer);
+      } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        result = await this.parseDOCX(file.buffer);
+      } else if (fileType === 'application/msword') {
+        throw new Error('Legacy DOC format not supported. Please use DOCX format.');
+      } else {
+        throw new Error(`Unsupported file type: ${fileType}`);
+      }
+      
+      return result.text;
+    } catch (error) {
+      console.error('File parsing error:', error);
+      throw new Error(`Failed to parse document: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  static async parseBuffer(buffer: Buffer, mimetype: string): Promise<ParsedDocument> {
     try {
       if (mimetype === 'application/pdf') {
         return await this.parsePDF(buffer);
