@@ -8,6 +8,12 @@ interface AuthUser {
   lastName?: string;
   company?: string;
   role?: string;
+  position?: string;
+  location?: string;
+  bio?: string;
+  phone?: string;
+  website?: string;
+  profileImageUrl?: string;
 }
 
 interface AuthContextType {

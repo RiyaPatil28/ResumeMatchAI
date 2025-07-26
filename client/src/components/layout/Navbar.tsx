@@ -197,17 +197,23 @@ export default function Navbar() {
                   )}
                 </div>
                 <div className="border-t border-gray-100" />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile Settings
+                <DropdownMenuItem asChild>
+                  <Link href="/profile-settings">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile Settings
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Account Settings
+                <DropdownMenuItem asChild>
+                  <Link href="/account-settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Account Settings
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Support
+                <DropdownMenuItem asChild>
+                  <Link href="/support">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Support
+                  </Link>
                 </DropdownMenuItem>
                 <div className="border-t border-gray-100" />
                 <DropdownMenuItem onClick={logout} className="text-red-600">

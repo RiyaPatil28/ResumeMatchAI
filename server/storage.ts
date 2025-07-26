@@ -59,7 +59,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Resume operations
-  async createResume(insertResume: InsertResume): Promise<Resume> {
+  async createResume(insertResume: InsertResume & { userId: string }): Promise<Resume> {
     const [resume] = await db
       .insert(resumes)
       .values(insertResume)
@@ -80,7 +80,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Job posting operations
-  async createJobPosting(insertJob: InsertJobPosting): Promise<JobPosting> {
+  async createJobPosting(insertJob: InsertJobPosting & { userId: string }): Promise<JobPosting> {
     const [job] = await db
       .insert(jobPostings)
       .values(insertJob)

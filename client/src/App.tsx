@@ -15,6 +15,9 @@ import NotFound from "@/pages/not-found";
 const JobPostings = lazy(() => import("@/pages/job-postings"));
 const Candidates = lazy(() => import("@/pages/candidates"));
 const Analytics = lazy(() => import("@/pages/analytics"));
+const ProfileSettings = lazy(() => import("@/pages/profile-settings"));
+const AccountSettings = lazy(() => import("@/pages/account-settings"));
+const Support = lazy(() => import("@/pages/support"));
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -53,6 +56,9 @@ function Router() {
           <Route path="/jobs" component={JobPostings} />
           <Route path="/candidates" component={Candidates} />
           <Route path="/analytics" component={Analytics} />
+          <Route path="/profile-settings" component={ProfileSettings} />
+          <Route path="/account-settings" component={AccountSettings} />
+          <Route path="/support" component={Support} />
           <Route path="/" component={Dashboard} />
           <Route component={NotFound} />
         </Switch>
