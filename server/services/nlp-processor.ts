@@ -139,17 +139,47 @@ export class NLPProcessor {
   }
 
   private static extractName(text: string): string | undefined {
-    // Simple name extraction - look for patterns at the beginning of the document
-    const lines = text.split('\n').slice(0, 5);
+    // Enhanced name extraction - look for patterns at the beginning of the document
+    const lines = text.split('\n').slice(0, 10);
+    
     for (const line of lines) {
       const trimmed = line.trim();
-      // Look for lines that could be names (2-4 words, proper case)
-      const nameMatch = trimmed.match(/^[A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)?$/);
-      if (nameMatch && trimmed.length < 50) {
-        return trimmed;
+      
+      // Skip empty lines and lines with common headers
+      if (!trimmed || trimmed.length < 2 || trimmed.length > 60) continue;
+      if (/^(resume|cv|curriculum|vitae|profile|contact|address|phone|email|objective|summary)/i.test(trimmed)) continue;
+      
+      // Look for name patterns (flexible capitalization)
+      const namePatterns = [
+        // Traditional format: First Last or First Middle Last
+        /^[A-Za-z]+\s+[A-Za-z]+(?:\s+[A-Za-z]+)?$/,
+        // All caps format: FIRST LAST
+        /^[A-Z]+\s+[A-Z]+(?:\s+[A-Z]+)?$/,
+        // Mixed case with periods/initials: John A. Smith
+        /^[A-Za-z]+(?:\s+[A-Z]\.)?\s+[A-Za-z]+$/,
+        // Name with common prefixes: Mr. John Smith, Dr. Jane Doe
+        /^(?:Mr\.?|Ms\.?|Mrs\.?|Dr\.?|Prof\.?)\s+[A-Za-z]+\s+[A-Za-z]+$/
+      ];
+      
+      for (const pattern of namePatterns) {
+        if (pattern.test(trimmed)) {
+          // Additional validation: check if it contains common non-name words
+          const commonWords = /\b(phone|email|address|street|city|state|zip|linkedin|github|portfolio|website|www|http|com|org|net|edu|gmail|yahoo|hotmail|outlook)\b/i;
+          if (!commonWords.test(trimmed)) {
+            // Clean up the name (remove extra whitespace, proper case)
+            return this.properCase(trimmed);
+          }
+        }
       }
     }
+    
     return undefined;
+  }
+  
+  private static properCase(name: string): string {
+    return name.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 
   private static extractEmail(text: string): string | undefined {
