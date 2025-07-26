@@ -1,5 +1,5 @@
 import { ExtractedSkills } from './nlp-processor.js';
-import { JobPosting } from '@shared/schema.js';
+import { type JobPostingType } from '@shared/schema.js';
 
 export interface MatchResult {
   overallScore: number;
@@ -16,7 +16,7 @@ export interface MatchResult {
 export class JobMatcher {
   static analyzeMatch(
     extractedSkills: ExtractedSkills,
-    jobPosting: JobPosting,
+    jobPosting: JobPostingType,
     experience: string,
     education: string
   ): MatchResult {

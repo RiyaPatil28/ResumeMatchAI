@@ -176,14 +176,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json({
-        id: resume._id.toString(),
-        fileName: resume.fileName,
-        candidateName: resume.candidateName,
-        candidateEmail: resume.candidateEmail,
-        extractedSkills: resume.extractedSkills,
-        experience: resume.experience,
-        education: resume.education,
-        uploadedAt: resume.uploadedAt
+        resume: {
+          id: resume._id.toString(),
+          fileName: resume.fileName,
+          candidateName: resume.candidateName,
+          candidateEmail: resume.candidateEmail,
+          extractedSkills: resume.extractedSkills,
+          experience: resume.experience,
+          education: resume.education,
+          uploadedAt: resume.uploadedAt
+        },
+        analysis: {
+          skills: resume.extractedSkills,
+          candidateName: resume.candidateName,
+          candidateEmail: resume.candidateEmail,
+          experience: resume.experience,
+          education: resume.education
+        }
       });
     } catch (error) {
       console.error('Resume upload error:', error);
@@ -213,14 +222,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Job routes
   app.post("/api/jobs", authMiddleware, async (req, res) => {
     try {
-      const { title, company, description, requirements } = req.body as InsertJobPosting;
+      const { title, company, description, requiredSkills } = req.body as InsertJobPosting;
       
       const job = await storage.createJob({
         userId: req.user!.id,
         title,
         company,
         description,
-        requiredSkills: requirements,
+        requiredSkills: requiredSkills,
       });
       
       res.json({
@@ -267,7 +276,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Generate match analysis
-      const matchResult = JobMatcher.calculateMatch(resume, job);
+      const matchResult = JobMatcher.analyzeMatch(
+        resume.extractedSkills, 
+        job, 
+        resume.experience || '', 
+        resume.education || ''
+      );
       
       // Create match record
       const match = await storage.createMatch({
@@ -379,9 +393,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Match not found" });
       }
       
+      // Get the full match with resume data for export
+      const matches = await storage.getMatches(req.user!.id);
+      const fullMatch = matches.find(m => m._id.toString() === id);
+      
+      if (!fullMatch) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+      
       // Generate export data
       const exportData = {
-        candidateName: match.candidateName || 'Unknown Candidate',
+        candidateName: fullMatch.resume.candidateName || 'Unknown Candidate',
         matchId: match._id.toString(),
         overallScore: match.overallScore,
         technicalScore: match.technicalScore,

@@ -41,9 +41,14 @@ export default function ResumeUpload({ onResumeUploaded }: ResumeUploadProps) {
       ]);
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/resumes'] });
+      const skillsCount = data.analysis.skills ? 
+        (data.analysis.skills.technical?.length || 0) + 
+        (data.analysis.skills.soft?.length || 0) + 
+        (data.analysis.skills.tools?.length || 0) : 0;
+      
       toast({
         title: "Resume uploaded successfully",
-        description: `Extracted ${Object.values(data.analysis.skills).flat().length} skills from ${data.resume.fileName}`,
+        description: `Extracted ${skillsCount} skills from ${data.resume.fileName}`,
       });
       setTimeout(() => setUploadProgress(0), 2000);
     },
