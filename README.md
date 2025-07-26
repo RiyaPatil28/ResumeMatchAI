@@ -68,10 +68,7 @@
 3. **Set up environment variables**
    Create a `.env` file in the root directory:
    ```env
-   DATABASE_URL=mongodb+srv://your_username:your_password@your_cluster.mongodb.net/resumematch_db?retryWrites=true&w=majority
-   JWT_SECRET=your_super_secure_jwt_secret_key_here_make_it_long_and_random
-   NODE_ENV=development
-   ```
+
 
 4. **Verify MongoDB connection**
    Ensure your MongoDB Atlas cluster is accessible and the DATABASE_URL is correct.
@@ -206,7 +203,7 @@ Ensure MongoDB Atlas connection is properly configured with the correct DATABASE
 
 ## 🤝 Contributing
 
-We welcome contributions! Please follow these steps:
+I welcome contributions! Please follow these steps:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -219,10 +216,6 @@ We welcome contributions! Please follow these steps:
 - Write comprehensive tests for new features
 - Maintain consistent code formatting with Prettier
 - Update documentation for API changes
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
