@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Users, Filter, MoreVertical, Trash2, Mail, Download, UserPlus } from "lucide-react";
+import { Users, Filter, MoreVertical, Trash2, Download, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -71,34 +71,21 @@ export default function CandidateTable() {
     },
   });
 
-  const sendEmailMutation = useMutation({
-    mutationFn: async ({ matchId, action }: { matchId: string; action: 'qualified' | 'not_qualified' }) => {
-      const response = await apiRequest('POST', `/api/matches/${matchId}/email`, { action });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Email sent",
-        description: "Notification email has been sent to the candidate",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Email failed", 
-        description: error.message || "Failed to send email",
-        variant: "destructive",
-      });
-    },
-  });
-
   const exportReportMutation = useMutation({
     mutationFn: async (matchId: string) => {
       const response = await apiRequest('GET', `/api/matches/${matchId}/export`);
       const blob = await response.blob();
+      
+      // Get match data for filename
+      const match = matches.find(m => m.id === matchId);
+      const candidateName = match?.resume?.candidateName || 'candidate';
+      const jobTitle = match?.job?.title || 'position';
+      const fileName = `${candidateName.replace(/\s+/g, '_')}-${jobTitle.replace(/\s+/g, '_')}-report.txt`;
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `candidate-report-${matchId}.pdf`;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -107,13 +94,13 @@ export default function CandidateTable() {
     onSuccess: () => {
       toast({
         title: "Report exported",
-        description: "Candidate report has been downloaded",
+        description: "Candidate report has been downloaded successfully",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Export failed",
-        description: error.message || "Failed to export report",
+        description: error.message || "Failed to export candidate report",
         variant: "destructive",
       });
     },
@@ -291,18 +278,11 @@ export default function CandidateTable() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem 
-                          onClick={() => sendEmailMutation.mutate({ matchId: match.id, action: 'qualified' })}
-                          disabled={sendEmailMutation.isPending}
-                        >
-                          <Mail className="mr-2 h-4 w-4" />
-                          Send Email
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
                           onClick={() => exportReportMutation.mutate(match.id)}
                           disabled={exportReportMutation.isPending}
                         >
                           <Download className="mr-2 h-4 w-4" />
-                          Export Report
+                          {exportReportMutation.isPending ? 'Exporting...' : 'Export Report'}
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => deleteMatchMutation.mutate(match.id)}

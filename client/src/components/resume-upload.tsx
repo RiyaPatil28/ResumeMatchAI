@@ -106,9 +106,7 @@ export default function ResumeUpload({ onResumeUploaded }: ResumeUploadProps) {
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('File input change triggered', e.target.files);
     if (e.target.files && e.target.files[0]) {
-      console.log('Selected file:', e.target.files[0].name, e.target.files[0].type);
       handleFileUpload(e.target.files[0]);
     }
   };
@@ -131,13 +129,10 @@ export default function ResumeUpload({ onResumeUploaded }: ResumeUploadProps) {
             onDragOver={handleDrag}
             onDrop={handleDrop}
             onClick={() => {
-              console.log('Upload area clicked');
               const input = document.getElementById('file-upload') as HTMLInputElement;
-              console.log('Input element found:', !!input);
               if (input) {
                 input.value = ''; // Reset input to allow same file selection
                 input.click();
-                console.log('Input click triggered');
               }
             }}
           >
