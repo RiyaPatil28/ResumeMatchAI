@@ -106,7 +106,9 @@ export default function ResumeUpload({ onResumeUploaded }: ResumeUploadProps) {
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('File input change triggered', e.target.files);
     if (e.target.files && e.target.files[0]) {
+      console.log('Selected file:', e.target.files[0].name, e.target.files[0].type);
       handleFileUpload(e.target.files[0]);
     }
   };
@@ -128,33 +130,34 @@ export default function ResumeUpload({ onResumeUploaded }: ResumeUploadProps) {
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
-            onClick={(e) => {
-              // Prevent event bubbling to avoid double triggering
-              e.preventDefault();
+            onClick={() => {
+              console.log('Upload area clicked');
               const input = document.getElementById('file-upload') as HTMLInputElement;
+              console.log('Input element found:', !!input);
               if (input) {
                 input.value = ''; // Reset input to allow same file selection
                 input.click();
+                console.log('Input click triggered');
               }
             }}
           >
             <div className="space-y-1 text-center">
               <CloudUpload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <div className="flex text-sm text-gray-600">
-                <label className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none">
-                  <span>Upload a file</span>
-                  <input
-                    id="file-upload"
-                    name="file-upload"
-                    type="file"
-                    className="sr-only"
-                    accept=".pdf,.docx,.doc"
-                    onChange={handleFileInputChange}
-                    disabled={uploadMutation.isPending}
-                  />
-                </label>
+                <span className="cursor-pointer font-medium text-primary hover:text-primary/80">
+                  Upload a file
+                </span>
                 <p className="pl-1">or drag and drop</p>
               </div>
+              <input
+                id="file-upload"
+                name="file-upload"
+                type="file"
+                className="sr-only"
+                accept=".pdf,.docx,.doc"
+                onChange={handleFileInputChange}
+                disabled={uploadMutation.isPending}
+              />
               <p className="text-xs text-gray-500">PDF, DOCX up to 10MB</p>
             </div>
           </div>

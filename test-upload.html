@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test File Upload</title>
+</head>
+<body>
+    <h3>Simple File Upload Test</h3>
+    <input type="file" id="fileInput" accept=".pdf,.docx">
+    <button onclick="testUpload()">Upload File</button>
+    <div id="result"></div>
+
+    <script>
+        function testUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                document.getElementById('result').innerHTML = 'Please select a file first';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('resume', file);
+            
+            const token = localStorage.getItem('auth_token');
+            console.log('Auth token:', token ? 'Found' : 'Not found');
+            
+            fetch('/api/resumes/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            });
+        }
+    </script>
+</body>
+</html>
