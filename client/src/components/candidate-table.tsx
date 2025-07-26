@@ -278,29 +278,9 @@ export default function CandidateTable() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Select 
-                      value={match.status} 
-                      onValueChange={(status) => updateStatusMutation.mutate({ matchId: match.id, status })}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue>
-                          <Badge className={getStatusColor(match.status)}>
-                            {match.status.replace('_', ' ').toUpperCase()}
-                          </Badge>
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="qualified">
-                          <Badge className="bg-green-100 text-green-800">QUALIFIED</Badge>
-                        </SelectItem>
-                        <SelectItem value="under_review">
-                          <Badge className="bg-yellow-100 text-yellow-800">UNDER REVIEW</Badge>
-                        </SelectItem>
-                        <SelectItem value="not_qualified">
-                          <Badge className="bg-red-100 text-red-800">NOT QUALIFIED</Badge>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Badge className={getStatusColor(match.status)}>
+                      {match.status.replace('_', ' ').toUpperCase()}
+                    </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <DropdownMenu>
