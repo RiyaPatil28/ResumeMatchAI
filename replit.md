@@ -104,3 +104,14 @@ Preferred communication style: Simple, everyday language.
 - **API Rate Limiting**: Ready for implementation with Express middleware
 
 The application is designed as a monorepo with clear separation between client and server code, shared type definitions, and a scalable architecture that can grow from prototype to production.
+
+## Recent Changes: Latest modifications with dates
+
+### January 26, 2025
+- ✅ **Enhanced File Upload**: Fixed PDF upload double selection issue - now works with single click
+- ✅ **Job Description Field**: Cleared default content to allow custom input for frontend developer positions  
+- ✅ **Frontend-Focused NLP**: Enhanced skill extraction with React, Vue, Angular, TypeScript, Next.js, state management libraries, CSS frameworks, build tools, testing frameworks, and modern frontend technologies
+- ✅ **Candidate Pipeline Actions**: Added comprehensive delete, email, and export functionality with dropdown menu interface
+- ✅ **Backend API Endpoints**: Implemented DELETE /api/matches/:id, POST /api/matches/:id/email, and GET /api/matches/:id/export endpoints
+- ✅ **Interactive Actions Menu**: Three-dot menu in candidate table with Send Email, Export Report, and Remove options
+- ✅ **Server Stability**: Resolved port conflicts and connection issues for reliable application performance
