@@ -68,7 +68,9 @@
 3. **Set up environment variables**
    Create a `.env` file in the root directory:
    ```env
-
+   DATABASE_URL=mongodb+srv://your_username:your_password@your_cluster.mongodb.net/resumematch_db
+   JWT_SECRET=your_jwt_secret_here
+   NODE_ENV=development
 
 4. **Verify MongoDB connection**
    Ensure your MongoDB Atlas cluster is accessible and the DATABASE_URL is correct.
