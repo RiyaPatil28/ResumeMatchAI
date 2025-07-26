@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, MoreVertical, Calendar, MapPin, DollarSign, Users, Eye, Edit, Trash2, Briefcase } from "lucide-react";
+import { Plus, Search, Filter, MoreVertical, Calendar, MapPin, DollarSign, Users, Eye, Edit, Trash2, Briefcase, Target } from "lucide-react";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,6 +29,7 @@ export default function JobPostings() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   
   const { data: jobs = [], isLoading } = useQuery<JobPosting[]>({
     queryKey: ["/api/jobs"],
@@ -73,6 +75,18 @@ export default function JobPostings() {
 
   const onSubmit = (data: JobFormData) => {
     createJobMutation.mutate(data);
+  };
+
+  const handleViewApplications = (jobId: string) => {
+    setLocation(`/candidates?jobId=${jobId}`);
+  };
+
+  const handleMatchCandidates = (jobId: string) => {
+    setLocation(`/dashboard?jobId=${jobId}`);
+  };
+
+  const handleMatchCandidates = (jobId: string) => {
+    setLocation(`/dashboard?jobId=${jobId}`);
   };
 
   return (
@@ -317,10 +331,19 @@ export default function JobPostings() {
                         Active
                       </Badge>
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewApplications(job.id)}
+                        >
+                          <Users className="mr-2 h-4 w-4" />
                           View Applications
                         </Button>
-                        <Button size="sm">
+                        <Button 
+                          size="sm"
+                          onClick={() => handleMatchCandidates(job.id)}
+                        >
+                          <Target className="mr-2 h-4 w-4" />
                           Match Candidates
                         </Button>
                       </div>
