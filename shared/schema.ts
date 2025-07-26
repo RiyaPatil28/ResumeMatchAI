@@ -1,10 +1,36 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, jsonb, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, jsonb, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table for authentication
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User accounts table
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique().notNull(),
+  password: varchar("password").notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  company: varchar("company"),
+  role: varchar("role").default("recruiter"),
+  profileImageUrl: varchar("profile_image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const resumes = pgTable("resumes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   fileName: text("file_name").notNull(),
   candidateName: text("candidate_name"),
   candidateEmail: text("candidate_email"),
@@ -21,6 +47,7 @@ export const resumes = pgTable("resumes", {
 
 export const jobPostings = pgTable("job_postings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   title: text("title").notNull(),
   company: text("company").notNull(),
   description: text("description").notNull(),
@@ -44,6 +71,12 @@ export const matches = pgTable("matches", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertResumeSchema = createInsertSchema(resumes).omit({
   id: true,
   uploadedAt: true,
@@ -59,6 +92,8 @@ export const insertMatchSchema = createInsertSchema(matches).omit({
   createdAt: true,
 });
 
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Resume = typeof resumes.$inferSelect;
 export type InsertResume = z.infer<typeof insertResumeSchema>;
 export type JobPosting = typeof jobPostings.$inferSelect;

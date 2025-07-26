@@ -1,27 +1,35 @@
-import { type Resume, type InsertResume, type JobPosting, type InsertJobPosting, type Match, type InsertMatch } from "@shared/schema";
+import { type User, type InsertUser, type Resume, type InsertResume, type JobPosting, type InsertJobPosting, type Match, type InsertMatch } from "@shared/schema";
+import { users, resumes, jobPostings, matches } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
+  // User operations
+  createUser(user: InsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
+  
   // Resume operations
   createResume(resume: InsertResume): Promise<Resume>;
   getResume(id: string): Promise<Resume | undefined>;
-  getAllResumes(): Promise<Resume[]>;
+  getAllResumes(userId?: string): Promise<Resume[]>;
   
   // Job posting operations
   createJobPosting(job: InsertJobPosting): Promise<JobPosting>;
   getJobPosting(id: string): Promise<JobPosting | undefined>;
-  getAllJobPostings(): Promise<JobPosting[]>;
+  getAllJobPostings(userId?: string): Promise<JobPosting[]>;
   
   // Match operations
   createMatch(match: InsertMatch): Promise<Match>;
   getMatch(id: string): Promise<Match | undefined>;
   getMatchesByResumeId(resumeId: string): Promise<Match[]>;
   getMatchesByJobId(jobId: string): Promise<Match[]>;
-  getAllMatches(): Promise<Match[]>;
+  getAllMatches(userId?: string): Promise<Match[]>;
   updateMatchStatus(id: string, status: "qualified" | "under_review" | "not_qualified"): Promise<Match | undefined>;
   
   // Analytics
-  getStats(): Promise<{
+  getStats(userId?: string): Promise<{
     totalResumes: number;
     activeJobs: number;
     avgMatchScore: number;
@@ -29,140 +37,147 @@ export interface IStorage {
   }>;
 }
 
-export class MemStorage implements IStorage {
-  private resumes: Map<string, Resume>;
-  private jobPostings: Map<string, JobPosting>;
-  private matches: Map<string, Match>;
-
-  constructor() {
-    this.resumes = new Map();
-    this.jobPostings = new Map();
-    this.matches = new Map();
-    
-    // Add sample data
-    this.initializeSampleData();
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
   }
 
-  private async initializeSampleData() {
-    // Sample job posting
-    const sampleJob = await this.createJobPosting({
-      title: "Senior Frontend Developer",
-      company: "Tech Corp Inc.",
-      description: "We are looking for a Senior Frontend Developer with 5+ years of experience in React, TypeScript, and modern web development. The ideal candidate should have strong skills in JavaScript, CSS, HTML, and experience with state management libraries like Redux. Knowledge of testing frameworks, CI/CD, and agile methodologies is preferred.",
-      requiredSkills: ["React", "TypeScript", "JavaScript", "CSS", "HTML", "Redux", "Jest", "Git"]
-    });
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
   }
 
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  // Resume operations
   async createResume(insertResume: InsertResume): Promise<Resume> {
-    const id = randomUUID();
-    const resume: Resume = {
-      ...insertResume,
-      id,
-      uploadedAt: new Date(),
-      candidateName: insertResume.candidateName || null,
-      candidateEmail: insertResume.candidateEmail || null,
-      extractedSkills: insertResume.extractedSkills || null,
-      experience: insertResume.experience || null,
-      education: insertResume.education || null,
-    };
-    this.resumes.set(id, resume);
+    const [resume] = await db
+      .insert(resumes)
+      .values(insertResume)
+      .returning();
     return resume;
   }
 
   async getResume(id: string): Promise<Resume | undefined> {
-    return this.resumes.get(id);
+    const [resume] = await db.select().from(resumes).where(eq(resumes.id, id));
+    return resume || undefined;
   }
 
-  async getAllResumes(): Promise<Resume[]> {
-    return Array.from(this.resumes.values()).sort((a, b) => 
-      new Date(b.uploadedAt!).getTime() - new Date(a.uploadedAt!).getTime()
-    );
+  async getAllResumes(userId?: string): Promise<Resume[]> {
+    if (userId) {
+      return await db.select().from(resumes).where(eq(resumes.userId, userId));
+    }
+    return await db.select().from(resumes);
   }
 
+  // Job posting operations
   async createJobPosting(insertJob: InsertJobPosting): Promise<JobPosting> {
-    const id = randomUUID();
-    const job: JobPosting = {
-      ...insertJob,
-      id,
-      createdAt: new Date(),
-      requiredSkills: insertJob.requiredSkills || null,
-    };
-    this.jobPostings.set(id, job);
+    const [job] = await db
+      .insert(jobPostings)
+      .values(insertJob)
+      .returning();
     return job;
   }
 
   async getJobPosting(id: string): Promise<JobPosting | undefined> {
-    return this.jobPostings.get(id);
+    const [job] = await db.select().from(jobPostings).where(eq(jobPostings.id, id));
+    return job || undefined;
   }
 
-  async getAllJobPostings(): Promise<JobPosting[]> {
-    return Array.from(this.jobPostings.values()).sort((a, b) => 
-      new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
-    );
+  async getAllJobPostings(userId?: string): Promise<JobPosting[]> {
+    if (userId) {
+      return await db.select().from(jobPostings).where(eq(jobPostings.userId, userId));
+    }
+    return await db.select().from(jobPostings);
   }
 
+  // Match operations
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
-    const id = randomUUID();
-    const match: Match = {
-      ...insertMatch,
-      id,
-      createdAt: new Date(),
-      status: insertMatch.status || "under_review",
-      matchedSkills: insertMatch.matchedSkills || null,
-      missingSkills: insertMatch.missingSkills || null,
-      strengths: insertMatch.strengths || null,
-      concerns: insertMatch.concerns || null,
-    };
-    this.matches.set(id, match);
+    const [match] = await db
+      .insert(matches)
+      .values(insertMatch)
+      .returning();
     return match;
   }
 
   async getMatch(id: string): Promise<Match | undefined> {
-    return this.matches.get(id);
+    const [match] = await db.select().from(matches).where(eq(matches.id, id));
+    return match || undefined;
   }
 
   async getMatchesByResumeId(resumeId: string): Promise<Match[]> {
-    return Array.from(this.matches.values()).filter(match => match.resumeId === resumeId);
+    return await db.select().from(matches).where(eq(matches.resumeId, resumeId));
   }
 
   async getMatchesByJobId(jobId: string): Promise<Match[]> {
-    return Array.from(this.matches.values()).filter(match => match.jobId === jobId);
+    return await db.select().from(matches).where(eq(matches.jobId, jobId));
   }
 
-  async getAllMatches(): Promise<Match[]> {
-    return Array.from(this.matches.values()).sort((a, b) => 
-      new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
-    );
+  async getAllMatches(userId?: string): Promise<Match[]> {
+    if (userId) {
+      // Get matches for jobs created by this user
+      const userMatches = await db
+        .select({
+          id: matches.id,
+          resumeId: matches.resumeId,
+          jobId: matches.jobId,
+          overallScore: matches.overallScore,
+          technicalScore: matches.technicalScore,
+          experienceScore: matches.experienceScore,
+          culturalScore: matches.culturalScore,
+          matchedSkills: matches.matchedSkills,
+          missingSkills: matches.missingSkills,
+          strengths: matches.strengths,
+          concerns: matches.concerns,
+          status: matches.status,
+          createdAt: matches.createdAt,
+        })
+        .from(matches)
+        .innerJoin(jobPostings, eq(matches.jobId, jobPostings.id))
+        .where(eq(jobPostings.userId, userId));
+      return userMatches;
+    }
+    return await db.select().from(matches);
   }
 
   async updateMatchStatus(id: string, status: "qualified" | "under_review" | "not_qualified"): Promise<Match | undefined> {
-    const match = this.matches.get(id);
-    if (match) {
-      match.status = status;
-      this.matches.set(id, match);
-      return match;
-    }
-    return undefined;
+    const [match] = await db
+      .update(matches)
+      .set({ status })
+      .where(eq(matches.id, id))
+      .returning();
+    return match || undefined;
   }
 
-  async getStats(): Promise<{
+  async getStats(userId?: string): Promise<{
     totalResumes: number;
     activeJobs: number;
     avgMatchScore: number;
     processingTime: string;
   }> {
-    const matches = Array.from(this.matches.values());
-    const avgScore = matches.length > 0 
-      ? Math.round(matches.reduce((sum, match) => sum + match.overallScore, 0) / matches.length)
+    const allResumes = await this.getAllResumes(userId);
+    const allJobs = await this.getAllJobPostings(userId);
+    const allMatches = await this.getAllMatches(userId);
+    
+    const avgScore = allMatches.length > 0 
+      ? Math.round(allMatches.reduce((sum, match) => sum + match.overallScore, 0) / allMatches.length)
       : 0;
 
     return {
-      totalResumes: this.resumes.size,
-      activeJobs: this.jobPostings.size,
+      totalResumes: allResumes.length,
+      activeJobs: allJobs.length,
       avgMatchScore: avgScore,
       processingTime: "2.3s"
     };
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

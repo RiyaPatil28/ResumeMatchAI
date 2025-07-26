@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Briefcase, TrendingUp, Clock, Brain, Bell, Plus, Download } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { FileText, Briefcase, TrendingUp, Clock, Brain, Bell, Plus, Download, User, LogOut } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import ResumeUpload from "@/components/resume-upload";
 import JobInput from "@/components/job-input";
 import SkillExtraction from "@/components/skill-extraction";
@@ -20,6 +22,7 @@ export default function Dashboard() {
   const [selectedResume, setSelectedResume] = useState<any>(null);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [currentMatch, setCurrentMatch] = useState<any>(null);
+  const { user, logout } = useAuth();
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/stats"],
@@ -67,12 +70,33 @@ export default function Dashboard() {
               <Button variant="ghost" size="sm">
                 <Bell className="h-5 w-5" />
               </Button>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">JD</span>
-                </div>
-                <span className="text-sm font-medium text-gray-700">Jane Doe</span>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">
+                        {user?.firstName?.[0] || user?.email?.[0] || 'U'}
+                      </span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName} ${user.lastName}`
+                        : user?.email || 'User'
+                      }
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

@@ -2,10 +2,11 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import { storage } from "./storage.js";
-import { insertResumeSchema, insertJobPostingSchema } from "@shared/schema.js";
+import { insertUserSchema, insertResumeSchema, insertJobPostingSchema } from "@shared/schema.js";
 import { FileParser } from "./services/file-parser.js";
 import { NLPProcessor } from "./services/nlp-processor.js";
 import { JobMatcher } from "./services/job-matcher.js";
+import { hashPassword, comparePassword, generateToken, authMiddleware } from "./auth.js";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -30,10 +31,125 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Get dashboard stats
-  app.get("/api/stats", async (req, res) => {
+  // Authentication routes
+  app.post("/api/auth/register", async (req, res) => {
     try {
-      const stats = await storage.getStats();
+      const validatedData = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists with this email" });
+      }
+      
+      // Hash password
+      const hashedPassword = await hashPassword(validatedData.password);
+      
+      // Create user
+      const user = await storage.createUser({
+        ...validatedData,
+        password: hashedPassword,
+      });
+      
+      // Generate token
+      const token = generateToken({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        company: user.company,
+        role: user.role,
+      });
+      
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          company: user.company,
+          role: user.role,
+        },
+        token,
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+      
+      // Find user
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+      
+      // Check password
+      const isValidPassword = await comparePassword(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+      
+      // Generate token
+      const token = generateToken({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        company: user.company,
+        role: user.role,
+      });
+      
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          company: user.company,
+          role: user.role,
+        },
+        token,
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ message: "Failed to login" });
+    }
+  });
+
+  app.get("/api/auth/me", authMiddleware, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        company: user.company,
+        role: user.role,
+      });
+    } catch (error) {
+      console.error('Get user error:', error);
+      res.status(500).json({ message: "Failed to get user data" });
+    }
+  });
+
+  // Get dashboard stats
+  app.get("/api/stats", authMiddleware, async (req, res) => {
+    try {
+      const stats = await storage.getStats(req.user!.id);
       res.json(stats);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -42,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Upload and analyze resume
-  app.post("/api/resumes/upload", upload.single('resume'), async (req, res) => {
+  app.post("/api/resumes/upload", authMiddleware, upload.single('resume'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -56,6 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create resume record
       const resumeData = {
+        userId: req.user!.id,
         fileName: req.file.originalname,
         candidateName: analysis.candidateName || "Unknown Candidate",
         candidateEmail: analysis.candidateEmail || undefined,
@@ -81,9 +198,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all resumes
-  app.get("/api/resumes", async (req, res) => {
+  app.get("/api/resumes", authMiddleware, async (req, res) => {
     try {
-      const resumes = await storage.getAllResumes();
+      const resumes = await storage.getAllResumes(req.user!.id);
       res.json(resumes);
     } catch (error) {
       console.error('Error fetching resumes:', error);
@@ -106,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create job posting
-  app.post("/api/jobs", async (req, res) => {
+  app.post("/api/jobs", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertJobPostingSchema.parse(req.body);
       
@@ -119,6 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const jobData = {
         ...validatedData,
+        userId: req.user!.id,
         requiredSkills
       };
 
@@ -133,9 +251,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all job postings
-  app.get("/api/jobs", async (req, res) => {
+  app.get("/api/jobs", authMiddleware, async (req, res) => {
     try {
-      const jobs = await storage.getAllJobPostings();
+      const jobs = await storage.getAllJobPostings(req.user!.id);
       res.json(jobs);
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -144,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Match resume to job
-  app.post("/api/matches", async (req, res) => {
+  app.post("/api/matches", authMiddleware, async (req, res) => {
     try {
       const { resumeId, jobId } = req.body;
       
@@ -184,9 +302,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all matches
-  app.get("/api/matches", async (req, res) => {
+  app.get("/api/matches", authMiddleware, async (req, res) => {
     try {
-      const matches = await storage.getAllMatches();
+      const matches = await storage.getAllMatches(req.user!.id);
       
       // Enrich matches with resume and job data
       const enrichedMatches = await Promise.all(
@@ -209,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update match status
-  app.patch("/api/matches/:id/status", async (req, res) => {
+  app.patch("/api/matches/:id/status", authMiddleware, async (req, res) => {
     try {
       const { status } = req.body;
       
