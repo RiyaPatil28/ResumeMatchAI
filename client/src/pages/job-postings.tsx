@@ -85,10 +85,6 @@ export default function JobPostings() {
     setLocation(`/dashboard?jobId=${jobId}`);
   };
 
-  const handleMatchCandidates = (jobId: string) => {
-    setLocation(`/dashboard?jobId=${jobId}`);
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
