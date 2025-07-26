@@ -79,12 +79,15 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 export const insertResumeSchema = createInsertSchema(resumes).omit({
   id: true,
+  userId: true,
   uploadedAt: true,
 });
 
 export const insertJobPostingSchema = createInsertSchema(jobPostings).omit({
   id: true,
+  userId: true,
   createdAt: true,
+  requiredSkills: true,
 });
 
 export const insertMatchSchema = createInsertSchema(matches).omit({
