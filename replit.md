@@ -118,3 +118,4 @@ The application is designed as a monorepo with clear separation between client a
 - ✅ **Profile Settings Pages**: Created comprehensive Profile Settings, Account Settings, and Support pages with full navigation
 - ✅ **Removed Email Feature**: Removed Send Email option from candidate actions per user request
 - ✅ **Enhanced Export**: Improved Export Report functionality with proper filename generation and error handling
+- ✅ **Simplified Actions**: Removed Send Email and Export Report buttons from match results page to streamline interface

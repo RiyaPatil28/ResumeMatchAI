@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { PieChart, CheckCircle, AlertTriangle, UserPlus, Mail, Download } from "lucide-react";
+import { PieChart, CheckCircle, AlertTriangle, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -188,14 +188,6 @@ export default function MatchResults({ match }: MatchResultsProps) {
           >
             <UserPlus className="mr-2 h-4 w-4" />
             Add to Pipeline
-          </Button>
-          <Button variant="outline">
-            <Mail className="mr-2 h-4 w-4" />
-            Send Email
-          </Button>
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Export Report
           </Button>
         </div>
       </CardContent>
