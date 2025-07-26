@@ -57,7 +57,7 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/resumematch-ai.git
+   git clone https://github.com/RiyaPatil28/resumematch-ai.git
    cd resumematch-ai
    ```
 
@@ -67,14 +67,10 @@
    ```
 
 3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Configure your `.env` file:
+   Create a `.env` file in the root directory:
    ```env
-   DATABASE_URL=your_postgresql_connection_string
-   JWT_SECRET=your_jwt_secret_key
+   DATABASE_URL=postgresql://username:password@localhost:5432/resumematch_db
+   JWT_SECRET=your_super_secure_jwt_secret_key_here_make_it_long_and_random
    NODE_ENV=development
    ```
 
