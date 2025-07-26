@@ -121,3 +121,4 @@ The application is designed as a monorepo with clear separation between client a
 - ✅ **Simplified Actions**: Removed Send Email and Export Report buttons from match results page to streamline interface
 - ✅ **Improved Table Layout**: Enhanced candidate table with horizontal scrolling, better column widths, and proper text truncation
 - ✅ **Fixed Name Extraction**: Enhanced NLP processor to properly extract candidate names from resumes with various formatting styles
+- ✅ **Dynamic Position Filter**: Updated candidate table filter to show all actual job positions instead of hardcoded software development roles

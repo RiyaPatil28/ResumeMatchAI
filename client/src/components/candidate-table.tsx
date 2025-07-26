@@ -28,6 +28,15 @@ export default function CandidateTable() {
     queryKey: ["/api/matches"],
   });
 
+  // Get unique job positions from matches
+  const uniquePositions = matches.reduce((positions: string[], match) => {
+    const jobTitle = match.job?.title;
+    if (jobTitle && !positions.includes(jobTitle)) {
+      positions.push(jobTitle);
+    }
+    return positions;
+  }, []).sort();
+
   const updateStatusMutation = useMutation({
     mutationFn: async ({ matchId, status }: { matchId: string; status: string }) => {
       const response = await apiRequest('PATCH', `/api/matches/${matchId}/status`, { status });
@@ -195,13 +204,16 @@ export default function CandidateTable() {
           </h3>
           <div className="flex items-center space-x-2">
             <Select>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-48">
                 <SelectValue placeholder="All Positions" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Positions</SelectItem>
-                <SelectItem value="frontend">Frontend Developer</SelectItem>
-                <SelectItem value="backend">Backend Developer</SelectItem>
+                {uniquePositions.map((position) => (
+                  <SelectItem key={position} value={position}>
+                    {position}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button variant="ghost" size="sm">
