@@ -69,9 +69,45 @@
 3. **Set up environment variables**
    Create a `.env` file in the root directory:
    ```env
-   DATABASE_URL=postgresql://username:password@localhost:5432/resumematch_db
-   JWT_SECRET=your_super_secure_jwt_secret_key_here_make_it_long_and_random
+   # For local development - replace with your actual PostgreSQL credentials
+   DATABASE_URL=postgresql://your_username:your_password@localhost:5432/resumematch_db
+   
+   # Generate a random secret key (you can use: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+   JWT_SECRET=a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456
+   
    NODE_ENV=development
+   ```
+
+   **How to get these values:**
+
+   **DATABASE_URL**: 
+   - If using **local PostgreSQL**: Install PostgreSQL and create a database
+     ```bash
+     # Install PostgreSQL (Ubuntu/Debian)
+     sudo apt install postgresql postgresql-contrib
+     
+     # Create database and user
+     sudo -u postgres createuser --interactive your_username
+     sudo -u postgres createdb resumematch_db
+     ```
+     Then use: `postgresql://your_username:your_password@localhost:5432/resumematch_db`
+
+   - If using **Neon Database** (recommended for cloud):
+     1. Go to [neon.tech](https://neon.tech)
+     2. Create a free account
+     3. Create a new project
+     4. Copy the connection string from your dashboard
+
+   - If using **Supabase**:
+     1. Go to [supabase.com](https://supabase.com)
+     2. Create a new project
+     3. Go to Settings > Database
+     4. Copy the connection string
+
+   **JWT_SECRET**: 
+   Generate a random secret key using:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    ```
 
 4. **Initialize the database**
